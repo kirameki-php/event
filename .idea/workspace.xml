@@ -6,26 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="aa298324-2060-4820-853f-5fe0a69ba817" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Event.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Event.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/EventInitializer.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/EventManager.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/EventManager.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Listener.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Listener.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/StoppableEvent.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/StoppableEvent.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/ContainerTest.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/Sample/Basic.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/Sample/BasicExtended.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/Sample/Builtin.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/Sample/Circular1.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/Sample/Circular2.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/Sample/Intersect.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/Sample/NoType.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/Sample/NoTypeDefault.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/Sample/Nullable.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/Sample/ParentType.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/Sample/SelfType.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/Sample/Union.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/Sample/Variadic.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/src/TestCase.php" beforeDir="false" afterPath="$PROJECT_DIR$/tests/src/TestCase.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -118,7 +99,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1657804975736</updated>
-      <workItem from="1657804977549" duration="582000" />
+      <workItem from="1657804977549" duration="1166000" />
     </task>
     <servers />
   </component>
