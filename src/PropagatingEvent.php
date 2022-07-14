@@ -2,7 +2,7 @@
 
 namespace Kirameki\Event;
 
-class StoppableEvent extends Event
+abstract class PropagatingEvent extends Event
 {
     /**
      * @var bool

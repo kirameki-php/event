@@ -3,55 +3,63 @@
 namespace Kirameki\Event;
 
 use Closure;
-use function get_class;
 
 class EventManager
 {
     /**
-     * @var array<string, list<Listener>>
+     * @var array<class-string, list<Listener<Event>>>
      */
     protected array $events = [];
 
     /**
-     * @var Closure
+     * @var list<Closure(class-string<Event>, Listener<Event>): mixed>
      */
-    protected array $onAdded = [];
+    protected array $addedCallbacks = [];
 
     /**
-     * @var Closure
+     * @var list<Closure(class-string<Event>): mixed>
      */
-    protected array $onRemoved = [];
+    protected array $removedCallbacks = [];
 
     /**
-     * @var Closure
+     * @var list<Closure(Event): mixed>
      */
-    protected array $onDispatched = [];
+    protected array $dispatchedCallbacks = [];
 
     /**
-     * @param string $name
-     * @param Closure $listener
+     * @template TEvent of Event
+     * @param class-string<Event> $name
+     * @param Closure(TEvent, Listener<TEvent>): TEvent|Listener<TEvent> $callback
      * @param bool $once
-     * @return void
+     * @return Listener<TEvent>
      */
-    public function listen(string $name, Closure $listener, bool $once = false): void
+    public function listen(string $name, Closure|Listener $callback, bool $once = false): Listener
     {
+        $listener = $callback instanceof Closure
+            ? new Listener($callback, $once)
+            : $callback;
+
         $this->events[$name] ??= [];
-        $this->events[$name][] = new Listener($listener, $once);
-        $this->invokeCallbacks($this->onAdded, $name, $listener, $once);
+        $this->events[$name][] = $listener;
+
+        $this->invokeCallbacks($this->addedCallbacks, $name, $callback, $once);
+
+        return $listener;
     }
 
     /**
-     * @param string $name
-     * @param Closure $listener
-     * @return void
+     * @template TEvent of Event
+     * @param class-string<TEvent> $name
+     * @param Closure(TEvent, Listener<TEvent>): TEvent|Listener<TEvent> $callback
+     * @return Listener<TEvent>
      */
-    public function listenOnce(string $name, Closure $listener): void
+    public function listenOnce(string $name, Closure|Listener $callback): Listener
     {
-        $this->listen($name, $listener, true);
+        return $this->listen($name, $callback, true);
     }
 
     /**
-     * @param string $name
+     * @param class-string<Event> $name
      * @return bool
      */
     public function hasListeners(string $name): bool
@@ -60,13 +68,13 @@ class EventManager
     }
 
     /**
-     * @param Event $event
-     * @param string|null $name
+     * @template TEvent of Event
+     * @param TEvent $event
      * @return void
      */
-    public function dispatch(Event $event, ?string $name = null): void
+    public function dispatch(Event $event): void
     {
-        $name ??= get_class($event);
+        $name = $event::class;
 
         if (!$this->hasListeners($name)) {
             return;
@@ -80,16 +88,15 @@ class EventManager
                 unset($listeners[$index]);
             }
 
-            if ($event instanceof StoppableEvent && $event->isPropagationStopped()) {
+            if ($event instanceof PropagatingEvent && $event->isPropagationStopped()) {
                 break;
             }
         }
 
-        $this->invokeCallbacks($this->onDispatched, $event, $name);
+        $this->invokeCallbacks($this->dispatchedCallbacks, $event, $name);
     }
 
     /**
-     * @private
      * @param class-string<Event> $class
      * @param mixed ...$args
      * @return void
@@ -102,65 +109,72 @@ class EventManager
     }
 
     /**
-     * @param string $name
-     * @param Closure $targetListener
+     * @template TEvent of Event
+     * @param class-string<TEvent> $name
+     * @param Closure(TEvent, Listener<TEvent>): mixed|Listener<TEvent> $targetListener
      * @return void
      */
-    public function removeListener(string $name, Closure $targetListener): void
+    public function removeListener(string $name, Closure|Listener $targetListener): void
     {
         if (!$this->hasListeners($name)) {
             return;
         }
 
+        $target = $targetListener instanceof Listener
+            ? $targetListener->getCallback()
+            : $targetListener;
+
         $listeners = &$this->events[$name];
         foreach ($listeners as $index => $listener) {
-            if ($listener->getCallback() === $targetListener) {
+            /** @var Closure(TEvent, Listener<TEvent>): mixed $callback */
+            $callback = $listener->getCallback();
+            if ($callback === $target) {
                 unset($listeners[$index]);
             }
         }
 
-        if (empty($listeners)) {
+        if (count($listeners) === 0) {
             unset($this->events[$name]);
         }
 
-        $this->invokeCallbacks($this->onRemoved, $name, $targetListener);
+        $this->invokeCallbacks($this->removedCallbacks, $name, $targetListener);
     }
 
     /**
-     * @param string $name
+     * @param class-string<Event> $name
      * @return void
      */
     public function removeListeners(string $name): void
     {
         unset($this->events[$name]);
-        $this->invokeCallbacks($this->onRemoved, $name, null);
+        $this->invokeCallbacks($this->removedCallbacks, $name, null);
     }
 
     /**
-     * @param Closure $callback
+     * @param Closure(class-string<Event>, Listener<Event>): mixed $callback
      * @return void
      */
     public function onListenerAdded(Closure $callback): void
     {
-        $this->onAdded[] = $callback;
+        $this->addedCallbacks[] = $callback;
     }
 
     /**
-     * @param Closure $callback
+     * @param Closure(class-string<Event>): mixed $callback
      * @return void
      */
     public function onListenerRemoved(Closure $callback): void
     {
-        $this->onRemoved[] = $callback;
+        $this->removedCallbacks[] = $callback;
     }
 
     /**
-     * @param Closure $callback
+     * @param Closure(Event): mixed $callback
      * @return void
      */
     public function onDispatched(Closure $callback): void
     {
-        $this->onDispatched[] = $callback;
+        $this->dispatchedCallbacks[] = $callback;
     }
 
     /**
@@ -168,7 +182,7 @@ class EventManager
      * @param mixed ...$args
      * @return void
      */
-    protected function invokeCallbacks(array $callbacks, ...$args): void
+    protected function invokeCallbacks(array $callbacks, mixed ...$args): void
     {
         if (!empty($callbacks)) {
             foreach ($callbacks as $callback) {

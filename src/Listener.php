@@ -4,10 +4,13 @@ namespace Kirameki\Event;
 
 use Closure;
 
+/**
+ * @template TEvent of Event
+ */
 class Listener
 {
     /**
-     * @var Closure
+     * @var Closure(TEvent, Listener<TEvent>): mixed
      */
     protected Closure $callback;
 
@@ -22,7 +25,7 @@ class Listener
     protected bool $listening;
 
     /**
-     * @param Closure $callback
+     * @param Closure(TEvent, Listener<TEvent>): mixed $callback
      * @param bool $once
      */
     public function __construct(Closure $callback, bool $once = false)
@@ -33,7 +36,7 @@ class Listener
     }
 
     /**
-     * @param Event $event
+     * @param TEvent $event
      * @return void
      */
     public function invoke(Event $event): void
@@ -47,7 +50,7 @@ class Listener
     }
 
     /**
-     * @return Closure
+     * @return Closure(TEvent, Listener<TEvent>): mixed
      */
     public function getCallback(): Closure
     {

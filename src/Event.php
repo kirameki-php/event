@@ -2,6 +2,6 @@
 
 namespace Kirameki\Event;
 
-class Event
+abstract class Event
 {
 }
