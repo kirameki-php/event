@@ -20,11 +20,6 @@ class Listener
     protected bool $once;
 
     /**
-     * @var bool
-     */
-    protected bool $listening;
-
-    /**
      * @param Closure(TEvent, Listener<TEvent>): mixed $callback
      * @param bool $once
      */
@@ -32,7 +27,6 @@ class Listener
     {
         $this->callback = $callback;
         $this->once = $once;
-        $this->listening = true;
     }
 
     /**
@@ -41,12 +35,7 @@ class Listener
      */
     public function invoke(Event $event): void
     {
-        if ($this->listening) {
-            if ($this->once) {
-                $this->stopListening();
-            }
-            ($this->callback)($event, $this);
-        }
+        ($this->callback)($event, $this);
     }
 
     /**
@@ -58,18 +47,10 @@ class Listener
     }
 
     /**
-     * @return void
-     */
-    public function stopListening(): void
-    {
-        $this->listening = false;
-    }
-
-    /**
      * @return bool
      */
-    public function isListening(): bool
+    public function invokedOnlyOnce(): bool
     {
-        return $this->listening;
+        return $this->once;
     }
 }

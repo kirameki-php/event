@@ -3,8 +3,12 @@
 namespace Kirameki\Event;
 
 use Closure;
+use LogicException;
+use function class_parents;
+use function count;
+use function is_a;
 
-class EventManager
+class EventHandler
 {
     /**
      * @var array<class-string, list<Listener<Event>>>
@@ -76,24 +80,27 @@ class EventManager
     {
         $name = $event::class;
 
-        if (!$this->hasListeners($name)) {
-            return;
-        }
-
-        $listeners = $this->events[$name] ?? [];
-        foreach ($listeners as $index => $listener) {
-            $listener->invoke($event);
-
-            if (!$listener->isListening()) {
-                unset($listeners[$index]);
+        foreach ($this->getClassHierarchy($name) as $hierarchy) {
+            if (!$this->hasListeners($hierarchy)) {
+                continue;
             }
 
-            if ($event instanceof PropagatingEvent && $event->isPropagationStopped()) {
-                break;
+            $listeners = $this->events[$hierarchy] ?? [];
+
+            foreach ($listeners as $index => $listener) {
+                $listener->invoke($event);
+
+                if (!$listener->invokedOnlyOnce()) {
+                    unset($listeners[$index]);
+                }
+
+                if ($event->isPropagationStopped()) {
+                    break;
+                }
             }
         }
 
-        $this->invokeCallbacks($this->dispatchedCallbacks, $event, $name);
+        $this->invokeCallbacks($this->dispatchedCallbacks, $event);
     }
 
     /**
@@ -144,7 +151,7 @@ class EventManager
      * @param class-string<Event> $name
      * @return void
      */
-    public function removeListeners(string $name): void
+    public function removeAllListeners(string $name): void
     {
         unset($this->events[$name]);
         $this->invokeCallbacks($this->removedCallbacks, $name, null);
@@ -178,13 +185,28 @@ class EventManager
     }
 
     /**
+     * @param class-string<Event> $name
+     * @return array<class-string<Event>>
+     */
+    protected function getClassHierarchy(string $name): array
+    {
+        if (is_a($name, Event::class, true)) {
+            /** @var list<class-string<Event>> $hierarchy */
+            $hierarchy = class_parents($name);
+            return [$name, ...$hierarchy];
+        }
+
+        throw new LogicException("{$name} must be an instance of " . Event::class);
+    }
+
+    /**
      * @param array<int, Closure> $callbacks
      * @param mixed ...$args
      * @return void
      */
     protected function invokeCallbacks(array $callbacks, mixed ...$args): void
     {
-        if (!empty($callbacks)) {
+        if (count($callbacks) > 0) {
             foreach ($callbacks as $callback) {
                 $callback(...$args);
             }
