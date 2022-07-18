@@ -13,12 +13,12 @@
   },
   "autoload": {
     "psr-4": {
-      "Kirameki\\Event": "src/"
+      "Kirameki\\Event\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Tests\\Kirameki\\Event": "tests/src/"
+      "Tests\\Kirameki\\Event\\": "tests/src/"
     }
   },
   "config": {
