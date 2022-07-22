@@ -11,6 +11,9 @@
     "phpunit/phpunit": "~9.0",
     "symfony/var-dumper": "^6"
   },
+  "replace": {
+    "symfony/polyfill-mbstring": "*"
+  },
   "autoload": {
     "psr-4": {
       "Kirameki\\Event\\": "src/"

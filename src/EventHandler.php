@@ -33,7 +33,7 @@ class EventHandler
     /**
      * @template TEvent of Event
      * @param class-string<Event> $name
-     * @param Closure(TEvent, Listener<TEvent>): TEvent|Listener<TEvent> $callback
+     * @param Closure(TEvent, Listener<TEvent>): mixed|Listener<TEvent> $callback
      * @param bool $once
      * @return Listener<TEvent>
      */
@@ -54,7 +54,7 @@ class EventHandler
     /**
      * @template TEvent of Event
      * @param class-string<TEvent> $name
-     * @param Closure(TEvent, Listener<TEvent>): TEvent|Listener<TEvent> $callback
+     * @param Closure(TEvent, Listener<TEvent>): mixed|Listener<TEvent> $callback
      * @return Listener<TEvent>
      */
     public function listenOnce(string $name, Closure|Listener $callback): Listener
@@ -78,19 +78,17 @@ class EventHandler
      */
     public function dispatch(Event $event): void
     {
-        $name = $event::class;
-
-        foreach ($this->getClassHierarchy($name) as $hierarchy) {
+        foreach ($this->getClassHierarchy($event) as $hierarchy) {
             if (!$this->hasListeners($hierarchy)) {
                 continue;
             }
 
-            $listeners = $this->events[$hierarchy] ?? [];
+            $listeners = &$this->events[$hierarchy];
 
             foreach ($listeners as $index => $listener) {
                 $listener->invoke($event);
 
-                if (!$listener->invokedOnlyOnce()) {
+                if ($listener->invokedOnlyOnce()) {
                     unset($listeners[$index]);
                 }
 
@@ -119,12 +117,14 @@ class EventHandler
      * @template TEvent of Event
      * @param class-string<TEvent> $name
      * @param Closure(TEvent, Listener<TEvent>): mixed|Listener<TEvent> $targetListener
-     * @return void
+     * @return bool
      */
-    public function removeListener(string $name, Closure|Listener $targetListener): void
+    public function removeListener(string $name, Closure|Listener $targetListener): bool
     {
+        $result = false;
+
         if (!$this->hasListeners($name)) {
-            return;
+            return $result;
         }
 
         $target = $targetListener instanceof Listener
@@ -137,24 +137,34 @@ class EventHandler
             $callback = $listener->getCallback();
             if ($callback === $target) {
                 unset($listeners[$index]);
+                $result = true;
             }
         }
 
         if (count($listeners) === 0) {
             unset($this->events[$name]);
+            $result = true;
         }
 
         $this->invokeCallbacks($this->removedCallbacks, $name, $targetListener);
+
+        return $result;
     }
 
     /**
      * @param class-string<Event> $name
-     * @return void
+     * @return bool
      */
-    public function removeAllListeners(string $name): void
+    public function removeAllListeners(string $name): bool
     {
+        if (!$this->hasListeners($name)) {
+            return false;
+        }
+
         unset($this->events[$name]);
         $this->invokeCallbacks($this->removedCallbacks, $name, null);
+
+        return true;
     }
 
     /**
@@ -185,18 +195,14 @@ class EventHandler
     }
 
     /**
-     * @param class-string<Event> $name
+     * @param Event $event
      * @return array<class-string<Event>>
      */
-    protected function getClassHierarchy(string $name): array
+    protected function getClassHierarchy(Event $event): array
     {
-        if (is_a($name, Event::class, true)) {
-            /** @var list<class-string<Event>> $hierarchy */
-            $hierarchy = class_parents($name);
-            return [$name, ...$hierarchy];
-        }
-
-        throw new LogicException("{$name} must be an instance of " . Event::class);
+        /** @var list<class-string<Event>> $hierarchy */
+        $hierarchy = class_parents($event);
+        return [$event::class, ...$hierarchy];
     }
 
     /**
