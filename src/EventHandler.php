@@ -3,7 +3,7 @@
 namespace Kirameki\Event;
 
 use Closure;
-use LogicException;
+use Kirameki\Core\Exceptions\LogicException;
 use function class_parents;
 use function count;
 use function is_a;
@@ -102,14 +102,22 @@ class EventHandler
     }
 
     /**
-     * @param class-string<Event> $class
-     * @param mixed ...$args
+     * @template TEvent of Event
+     * @param class-string<TEvent> $class
+     * @param Closure(): TEvent $callback
      * @return void
      */
-    public function dispatchClass(string $class, ...$args): void
+    public function dispatchIfListening(string $class, Closure $callback): void
     {
         if ($this->hasListeners($class)) {
-            $this->dispatch(new $class(...$args));
+            $event = $callback();
+            if (!is_a($event, $class)) {
+                throw new LogicException('$event must be an instance of '.$class, [
+                    'event' => $event,
+                    'class' => $class,
+                ]);
+            }
+            $this->dispatch($event);
         }
     }
 

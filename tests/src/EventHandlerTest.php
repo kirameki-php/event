@@ -105,11 +105,11 @@ class EventHandlerTest extends TestCase
         self::assertSame($event1, $this->results[0]);
     }
 
-    public function test_dispatchClass(): void
+    public function test_dispatchIfListening(): void
     {
         $this->handler->listen(Saving::class, fn(Saving $e) => $this->results[] = $e);
 
-        $this->handler->dispatchClass(Saving::class, 'foo');
+        $this->handler->dispatchIfListening(Saving::class, fn() => new Saving('foo'));
 
         self::assertCount(1, $this->results);
         self::assertInstanceOf(Saving::class, $this->results[0]);
