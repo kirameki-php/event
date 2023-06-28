@@ -88,9 +88,12 @@ class EventHandler
             foreach ($listeners as $index => $listener) {
                 $listener->invoke($event);
 
-                if ($listener->invokedOnlyOnce()) {
+                if ($listener->invokedOnlyOnce() || $event->willEvictCallback()) {
                     unset($listeners[$index]);
                 }
+
+                // Reset state so that it can be reused.
+                $event->evictCallback(false);
 
                 if ($event->isPropagationStopped()) {
                     break;
