@@ -77,6 +77,7 @@ class EventDispatcher
      */
     public function dispatch(Event $event): void
     {
+        $count = 0;
         if ($handler = $this->getHandlerOrNull($event::class)) {
             $count = $handler->dispatch($event);
 
