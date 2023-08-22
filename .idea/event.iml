@@ -41,6 +41,9 @@
       <excludeFolder url="file://$MODULE_DIR$/vendor/composer" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/kirameki/utils" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/kirameki/core" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/kirameki/dumper" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/south-pointe/ansi" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/webmozart/assert" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

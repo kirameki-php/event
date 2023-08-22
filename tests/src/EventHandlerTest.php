@@ -3,13 +3,13 @@
 namespace Tests\Kirameki\Event;
 
 use Kirameki\Event\Event;
-use Kirameki\Event\EventHandler;
+use Kirameki\Event\EventDispatcher;
 use Kirameki\Event\Listener;
 use Tests\Kirameki\Event\Samples\Saving;
 
 class EventHandlerTest extends TestCase
 {
-    protected EventHandler $handler;
+    protected EventDispatcher $handler;
 
     /**
      * @var array<int, Event>
@@ -19,7 +19,7 @@ class EventHandlerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->handler = new EventHandler();
+        $this->handler = new EventDispatcher();
     }
 
     public function test_listen_from_Closure(): void
@@ -34,18 +34,6 @@ class EventHandlerTest extends TestCase
         self::assertCount(2, $this->results);
         self::assertSame($event1, $this->results[0]);
         self::assertSame($event2, $this->results[1]);
-    }
-
-    public function test_listen_from_Listener(): void
-    {
-        $listener = new Listener(fn(Saving $e) => $this->results[] = $e);
-        $this->handler->listen(Saving::class, $listener);
-
-        $event1 = new Saving('test');
-        $this->handler->dispatch($event1);
-
-        self::assertCount(1, $this->results);
-        self::assertSame($event1, $this->results[0]);
     }
 
     public function testListen_with_propagation_stopped(): void
@@ -125,72 +113,19 @@ class EventHandlerTest extends TestCase
         $this->handler->listen(Saving::class, $callback);
 
         self::assertTrue($this->handler->hasListeners(Saving::class));
-        self::assertTrue($this->handler->removeListener(Saving::class, $callback));
-        self::assertFalse($this->handler->hasListeners(Saving::class));
-    }
-
-    public function test_removeListener_using_Listener(): void
-    {
-        $listener = new Listener(fn(Saving $e) => $this->results[] = $e);
-
-        self::assertFalse($this->handler->removeListener(Saving::class, $listener));
-
-        $this->handler->listen(Saving::class, $listener);
-
-        self::assertTrue($this->handler->removeListener(Saving::class, $listener));
+        self::assertSame(1, $this->handler->removeListener(Saving::class, $callback));
         self::assertFalse($this->handler->hasListeners(Saving::class));
     }
 
     public function test_removeAllListeners(): void
     {
-        self::assertFalse($this->handler->removeAllListeners(Saving::class));
+        self::assertFalse($this->handler->removeListenersFor(Saving::class));
 
         $this->handler->listen(Saving::class, fn(Saving $e) => true);
         $this->handler->listen(Saving::class, fn(Saving $e) => false);
 
         self::assertTrue($this->handler->hasListeners(Saving::class));
-        self::assertTrue($this->handler->removeAllListeners(Saving::class));
+        self::assertTrue($this->handler->removeListenersFor(Saving::class));
         self::assertFalse($this->handler->hasListeners(Saving::class));
-    }
-
-    public function test_onListenerAdded(): void
-    {
-        $this->handler->onListenerAdded(function (string $name) {
-            self::assertSame(Saving::class, $name);
-        });
-
-        $this->handler->listen(Saving::class, fn(Saving $e) => true);
-    }
-
-    public function test_onListenerRemoved_from_removeListener(): void
-    {
-        $this->handler->onListenerRemoved(function (string $name) {
-            self::assertSame(Saving::class, $name);
-        });
-
-        $callback = fn(Saving $e) => true;
-        $this->handler->listen(Saving::class, $callback);
-        $this->handler->removeListener(Saving::class, $callback);
-    }
-
-    public function test_onListenerRemoved_from_removeAllListeners(): void
-    {
-        $this->handler->onListenerRemoved(function (string $name) {
-            self::assertSame(Saving::class, $name);
-        });
-
-        $this->handler->listen(Saving::class, fn(Saving $e) => true);
-        $this->handler->removeAllListeners(Saving::class);
-    }
-
-    public function test_onDispatched(): void
-    {
-        $event1 = new Saving('test');
-
-        $this->handler->onDispatched(function (Event $e) use ($event1) {
-            self::assertSame($event1, $e);
-        });
-
-        $this->handler->dispatch($event1);
     }
 }
