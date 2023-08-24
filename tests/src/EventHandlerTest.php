@@ -2,9 +2,8 @@
 
 namespace Tests\Kirameki\Event;
 
-use Kirameki\Event\Event;
+use Kirameki\Core\Event;
 use Kirameki\Event\EventDispatcher;
-use Kirameki\Event\Listener;
 use Tests\Kirameki\Event\Samples\Saving;
 
 class EventHandlerTest extends TestCase
@@ -127,5 +126,46 @@ class EventHandlerTest extends TestCase
         self::assertTrue($this->handler->hasListeners(Saving::class));
         self::assertTrue($this->handler->removeListenersFor(Saving::class));
         self::assertFalse($this->handler->hasListeners(Saving::class));
+    }
+
+    public function test_onListenerAdded(): void
+    {
+        $this->handler->onListenerAdded(function (string $name) {
+            self::assertSame(Saving::class, $name);
+        });
+
+        $this->handler->listen(Saving::class, fn(Saving $e) => true);
+    }
+
+    public function test_onListenerRemoved_from_removeListener(): void
+    {
+        $this->handler->onListenerRemoved(function (string $name) {
+            self::assertSame(Saving::class, $name);
+        });
+
+        $callback = fn(Saving $e) => true;
+        $this->handler->listen(Saving::class, $callback);
+        $this->handler->removeListener(Saving::class, $callback);
+    }
+
+    public function test_onListenerRemoved_from_removeAllListeners(): void
+    {
+        $this->handler->onListenerRemoved(function (string $name) {
+            self::assertSame(Saving::class, $name);
+        });
+
+        $this->handler->listen(Saving::class, fn(Saving $e) => true);
+        $this->handler->removeListenersFor(Saving::class);
+    }
+
+    public function test_onDispatched(): void
+    {
+        $event1 = new Saving('test');
+
+        $this->handler->onDispatched(function (Event $e) use ($event1) {
+            self::assertSame($event1, $e);
+        });
+
+        $this->handler->dispatch($event1);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Tests\Kirameki\Event\Samples;
 
-use Kirameki\Event\Event;
+use Kirameki\Core\Event;
 
 class Saving extends Event
 {
