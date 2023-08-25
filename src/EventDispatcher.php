@@ -13,17 +13,7 @@ class EventDispatcher
     /**
      * @var array<class-string, EventHandler<Event>>
      */
-    protected array $listenersByEvent = [];
-
-    /**
-     * @var list<Closure(class-string<Event>, Closure, bool): mixed>
-     */
-    protected array $addedCallbacks = [];
-
-    /**
-     * @var list<Closure(class-string<Event>, Closure): mixed>
-     */
-    protected array $removedCallbacks = [];
+    protected array $handlers = [];
 
     /**
      * @var list<Closure(Event, int): mixed>
@@ -34,43 +24,31 @@ class EventDispatcher
      * @template TEvent of Event
      * @param class-string<TEvent> $name
      * @param Closure(TEvent): mixed $callback
-     * @param bool $once
      * @return void
      */
-    public function listen(string $name, Closure $callback, bool $once = false): void
+    public function listen(string $name, Closure $callback): void
     {
         $handler = $this->getHandlerOrNull($name);
         if ($handler === null) {
-            $handler = $this->listenersByEvent[$name] = new EventHandler($name);
+            $handler = $this->handlers[$name] = new EventHandler($name);
         }
-        $handler->listen($callback, $once);
-
-        foreach ($this->addedCallbacks as $addedCallback) {
-            $addedCallback($name, $callback, $once);
-        }
+        $handler->listen($callback);
     }
 
-    /**
-     * @template TEvent of Event
-     * @param class-string<TEvent> $name
-     * @param Closure(TEvent): mixed $callback
-     * @return void
-     */
-    public function listenOnce(string $name, Closure $callback): void
-    {
-        $this->listen($name, $callback, true);
-    }
-
-    /**
+    /*
+     * Checks if there are any listeners for the given event.
+     *
      * @param class-string<Event> $name
      * @return bool
      */
     public function hasListeners(string $name): bool
     {
-        return array_key_exists($name, $this->listenersByEvent);
+        return array_key_exists($name, $this->handlers);
     }
 
     /**
+     * Calls all listeners for the given event.
+     *
      * @template TEvent of Event
      * @param TEvent $event
      * @return void
@@ -82,7 +60,7 @@ class EventDispatcher
             $count = $handler->dispatch($event);
 
             if (!$handler->hasListeners()) {
-                unset($this->listenersByEvent[$event::class]);
+                unset($this->handlers[$event::class]);
             }
         }
 
@@ -92,6 +70,13 @@ class EventDispatcher
     }
 
     /**
+     * Invokes the callback if there are any listeners for the given event.
+     * The invoked callback must return an instance of the given event class.
+     * The returned event will be dispatched to all the listeners.
+     *
+     * This method is useful when creating an event instance is costly and
+     * instantiation should happen only if there are listeners.
+     *
      * @template TEvent of Event
      * @param class-string<TEvent> $name
      * @param Closure(): TEvent $callback
@@ -115,6 +100,9 @@ class EventDispatcher
     }
 
     /**
+     * Removes the given callback from the listeners of the given event.
+     * Returns the number of listeners that were removed.
+     *
      * @template TEvent of Event
      * @param class-string<TEvent> $name
      * @param Closure(TEvent): mixed $callback
@@ -132,48 +120,30 @@ class EventDispatcher
         $count += $handler->removeListener($callback);
 
         if (!$handler->hasListeners()) {
-            unset($this->listenersByEvent[$name]);
-        }
-
-        foreach ($this->removedCallbacks as $removedCallback) {
-            $removedCallback($name, $callback);
+            unset($this->handlers[$name]);
         }
 
         return $count;
     }
 
     /**
+     * Remove all listeners for the given event.
+     *
      * @param class-string<Event> $name
      * @return bool
      */
     public function removeListenersFor(string $name): bool
     {
         if ($this->hasListeners($name)) {
-            unset($this->listenersByEvent[$name]);
+            unset($this->handlers[$name]);
             return true;
         }
         return false;
     }
 
     /**
-     * @param Closure(class-string<Event>, Closure, bool): mixed $callback
-     * @return void
-     */
-    public function onListenerAdded(Closure $callback): void
-    {
-        $this->addedCallbacks[] = $callback;
-    }
-
-    /**
-     * @param Closure(class-string<Event>, Closure): mixed $callback
-     * @return void
-     */
-    public function onListenerRemoved(Closure $callback): void
-    {
-        $this->removedCallbacks[] = $callback;
-    }
-
-    /**
+     * Registers a callback that will be invoked whenever an event is dispatched.
+     *
      * @param Closure(Event, int): mixed $callback
      * @return void
      */
@@ -183,6 +153,8 @@ class EventDispatcher
     }
 
     /**
+     * Get the handler for the given event.
+     *
      * @template TEvent of Event
      * @param class-string<TEvent> $name
      * @return EventHandler<TEvent>|null
@@ -190,6 +162,6 @@ class EventDispatcher
     protected function getHandlerOrNull(string $name): ?EventHandler
     {
         /** @var EventHandler<TEvent>|null */
-        return $this->listenersByEvent[$name] ?? null;
+        return $this->handlers[$name] ?? null;
     }
 }

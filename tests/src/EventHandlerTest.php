@@ -46,32 +46,6 @@ class EventHandlerTest extends TestCase
         self::assertCount(0, $this->results);
     }
 
-    public function test_listenOnce(): void
-    {
-        $this->handler->listenOnce(Saving::class, fn(Saving $e) => $this->results[] = $e);
-
-        $event = new Saving('test');
-        $this->handler->dispatch($event);
-        $this->handler->dispatch($event);
-
-        self::assertCount(1, $this->results);
-        self::assertSame($event, $this->results[0]);
-    }
-
-    public function test_listenOnce_with_propagation_stopped(): void
-    {
-        $this->handler->listenOnce(Saving::class, fn(Saving $e) => $e->stopPropagation());
-        $this->handler->listen(Saving::class, fn(Saving $e) => $this->results[] = $e);
-
-        $event1 = new Saving('test');
-        $event2 = new Saving('test');
-        $this->handler->dispatch($event1);
-        $this->handler->dispatch($event2);
-
-        self::assertCount(1, $this->results);
-        self::assertSame($event2, $this->results[0]);
-    }
-
     public function test_hasListeners(): void
     {
         self::assertFalse($this->handler->hasListeners(Saving::class));
@@ -126,36 +100,6 @@ class EventHandlerTest extends TestCase
         self::assertTrue($this->handler->hasListeners(Saving::class));
         self::assertTrue($this->handler->removeListenersFor(Saving::class));
         self::assertFalse($this->handler->hasListeners(Saving::class));
-    }
-
-    public function test_onListenerAdded(): void
-    {
-        $this->handler->onListenerAdded(function (string $name) {
-            self::assertSame(Saving::class, $name);
-        });
-
-        $this->handler->listen(Saving::class, fn(Saving $e) => true);
-    }
-
-    public function test_onListenerRemoved_from_removeListener(): void
-    {
-        $this->handler->onListenerRemoved(function (string $name) {
-            self::assertSame(Saving::class, $name);
-        });
-
-        $callback = fn(Saving $e) => true;
-        $this->handler->listen(Saving::class, $callback);
-        $this->handler->removeListener(Saving::class, $callback);
-    }
-
-    public function test_onListenerRemoved_from_removeAllListeners(): void
-    {
-        $this->handler->onListenerRemoved(function (string $name) {
-            self::assertSame(Saving::class, $name);
-        });
-
-        $this->handler->listen(Saving::class, fn(Saving $e) => true);
-        $this->handler->removeListenersFor(Saving::class);
     }
 
     public function test_onDispatched(): void
