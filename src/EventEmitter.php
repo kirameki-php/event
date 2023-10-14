@@ -6,9 +6,11 @@ use Closure;
 use Kirameki\Core\Event;
 use Kirameki\Core\EventHandler;
 use Kirameki\Core\Exceptions\LogicException;
+use ReflectionFunction;
+use ReflectionNamedType;
 use function is_a;
 
-class EventDispatcher
+class EventEmitter
 {
     /**
      * @var array<class-string, EventHandler<Event>>
@@ -18,24 +20,78 @@ class EventDispatcher
     /**
      * @var list<Closure(Event, int): mixed>
      */
-    protected array $dispatchedCallbacks = [];
+    protected array $onEmittedCallbacks = [];
 
     /**
+     * Appends a listener to the beginning of the list for the given event.
+     * This method must have an Event as the first parameter.
+     *
+     * This method is useful and cleaner than using append() but is slower since
+     * it needs to extract the event class name from the callback using reflections.
+     *
      * @template TEvent of Event
-     * @param class-string<TEvent> $name
+     * @param Closure(TEvent): mixed $callback
+     * @param bool $once
+     * [Optional] Whether the listener should be removed after it's called once.
+     * @return void
+     */
+    public function on(Closure $callback, bool $once = false): void
+    {
+        $this->append($this->extractEventName($callback), $callback, $once);
+    }
+
+    /**
+     * Appends a listener to the beginning of the list for the given event.
+     * Listener will be removed after it's called once.
+     *
+     * @template TEvent of Event
      * @param Closure(TEvent): mixed $callback
      * @return void
      */
-    public function listen(string $name, Closure $callback): void
+    public function once(Closure $callback): void
+    {
+        $this->append($this->extractEventName($callback), $callback, true);
+    }
+
+    /**
+     * Appends a listener to the beginning of the list for the given event.
+     *
+     * @template TEvent of Event
+     * @param class-string<TEvent> $name
+     * @param Closure(TEvent): mixed $callback
+     * @param bool $once
+     * [Optional] Whether the listener should be removed after it's called once.
+     * @return void
+     */
+    public function append(string $name, Closure $callback, bool $once = false): void
     {
         $handler = $this->getHandlerOrNull($name);
         if ($handler === null) {
             $handler = $this->handlers[$name] = new EventHandler($name);
         }
-        $handler->listen($callback);
+        $handler->append($callback, $once);
     }
 
-    /*
+    /**
+     * Prepends a listener to the beginning of the list for the given event.
+     *
+     * @template TEvent of Event
+     * @param class-string<TEvent> $name
+     * @param Closure(TEvent): mixed $callback
+     * @param bool $once
+     * [Optional] Whether the listener should be removed after it's called once.
+     * @return void
+     */
+    public function prepend(string $name, Closure $callback, bool $once = false): void
+    {
+        $handler = $this->getHandlerOrNull($name);
+        if ($handler === null) {
+            $handler = $this->handlers[$name] = new EventHandler($name);
+        }
+        $handler->prepend($callback, $once);
+    }
+
+    /**
      * Checks if there are any listeners for the given event.
      *
      * @param class-string<Event> $name
@@ -53,18 +109,18 @@ class EventDispatcher
      * @param TEvent $event
      * @return void
      */
-    public function dispatch(Event $event): void
+    public function emit(Event $event): void
     {
         $count = 0;
         if ($handler = $this->getHandlerOrNull($event::class)) {
-            $count = $handler->dispatch($event);
+            $count = $handler->emit($event);
 
             if (!$handler->hasListeners()) {
                 unset($this->handlers[$event::class]);
             }
         }
 
-        foreach ($this->dispatchedCallbacks as $dispatchedCallback) {
+        foreach ($this->onEmittedCallbacks as $dispatchedCallback) {
             $dispatchedCallback($event, $count);
         }
     }
@@ -82,7 +138,7 @@ class EventDispatcher
      * @param Closure(): TEvent $callback
      * @return void
      */
-    public function dispatchIfListening(string $name, Closure $callback): void
+    public function emitIfListening(string $name, Closure $callback): void
     {
         if (!$this->hasListeners($name)) {
             return;
@@ -96,7 +152,7 @@ class EventDispatcher
             ]);
         }
 
-        $this->dispatch($event);
+        $this->emit($event);
     }
 
     /**
@@ -132,7 +188,7 @@ class EventDispatcher
      * @param class-string<Event> $name
      * @return bool
      */
-    public function removeListenersFor(string $name): bool
+    public function removeAllListeners(string $name): bool
     {
         if ($this->hasListeners($name)) {
             unset($this->handlers[$name]);
@@ -142,14 +198,14 @@ class EventDispatcher
     }
 
     /**
-     * Registers a callback that will be invoked whenever an event is dispatched.
+     * Registers a callback that will be invoked whenever an event is emitted.
      *
      * @param Closure(Event, int): mixed $callback
      * @return void
      */
-    public function onDispatched(Closure $callback): void
+    public function onEmitted(Closure $callback): void
     {
-        $this->dispatchedCallbacks[] = $callback;
+        $this->onEmittedCallbacks[] = $callback;
     }
 
     /**
@@ -163,5 +219,33 @@ class EventDispatcher
     {
         /** @var EventHandler<TEvent>|null */
         return $this->handlers[$name] ?? null;
+    }
+
+    /**
+     * Extracts the event class name from the given callback.
+     * The callback must have an Event as the first parameter.
+     *
+     * @template TEvent of Event
+     * @param Closure(TEvent): mixed $callback
+     * @return class-string<TEvent>
+     */
+    protected function extractEventName(Closure $callback): string
+    {
+        $type = (new ReflectionFunction($callback))
+            ->getParameters()[0]
+            ->getType();
+
+        $name = ($type instanceof ReflectionNamedType)
+            ? $type->getName()
+            : '';
+
+        if (!is_a($name, Event::class, true)) {
+            throw new LogicException('The first parameter of the callback must be an instance of Event.', [
+                'callback' => $callback,
+            ]);
+        }
+
+        /** @var class-string<TEvent> */
+        return $name;
     }
 }
