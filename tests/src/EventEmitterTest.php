@@ -3,8 +3,8 @@
 namespace Tests\Kirameki\Event;
 
 use DateTime;
-use Kirameki\Core\Event;
 use Kirameki\Core\Exceptions\LogicException;
+use Kirameki\Event\Event;
 use Kirameki\Event\EventManager;
 use Tests\Kirameki\Event\Samples\Saving;
 

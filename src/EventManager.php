@@ -3,8 +3,6 @@
 namespace Kirameki\Event;
 
 use Closure;
-use Kirameki\Core\Event;
-use Kirameki\Core\EventHandler;
 use Kirameki\Core\Exceptions\LogicException;
 use ReflectionFunction;
 use ReflectionNamedType;
