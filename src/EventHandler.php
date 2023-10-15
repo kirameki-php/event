@@ -10,7 +10,7 @@ use function count;
 use function is_a;
 
 /**
- * @template-covariant TEvent of Event
+ * @template TEvent of Event
  */
 class EventHandler
 {
