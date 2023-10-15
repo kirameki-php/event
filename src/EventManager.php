@@ -10,7 +10,7 @@ use ReflectionFunction;
 use ReflectionNamedType;
 use function is_a;
 
-class EventEmitter
+class EventManager
 {
     /**
      * @var array<class-string, EventHandler<Event>>
@@ -42,7 +42,8 @@ class EventEmitter
 
     /**
      * Appends a listener to the beginning of the list for the given event.
-     * Listener will be removed after it's called once.
+     * This method must have an Event as the first parameter. Listener will be
+     * removed after it's called once.
      *
      * @template TEvent of Event
      * @param Closure(TEvent): mixed $callback
@@ -146,7 +147,7 @@ class EventEmitter
 
         $event = $callback();
         if (!is_a($event, $name)) {
-            throw new LogicException('$event must be an instance of '.$name, [
+            throw new LogicException('$event must be an instance of ' . $name, [
                 'event' => $event,
                 'class' => $name,
             ]);
@@ -231,10 +232,8 @@ class EventEmitter
      */
     protected function extractEventName(Closure $callback): string
     {
-        $type = (new ReflectionFunction($callback))
-            ->getParameters()[0]
-            ->getType();
-
+        $paramReflection = (new ReflectionFunction($callback))->getParameters()[0] ?? null;
+        $type = $paramReflection?->getType();
         $name = ($type instanceof ReflectionNamedType)
             ? $type->getName()
             : '';

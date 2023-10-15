@@ -1,9 +1,9 @@
 # Framework
 /composer.lock
+/coverage
 /vendor
 
 # PHPUnit
-/.coverage
 /.phpunit.result.cache
 
 # OS related files
