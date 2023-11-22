@@ -119,15 +119,15 @@ class EventManager
             }
         }
 
-        foreach ($this->onEmittedCallbacks as $dispatchedCallback) {
-            $dispatchedCallback($event, $count);
+        foreach ($this->onEmittedCallbacks as $callback) {
+            $callback($event, $count);
         }
     }
 
     /**
      * Invokes the callback if there are any listeners for the given event.
      * The invoked callback must return an instance of the given event class.
-     * The returned event will be dispatched to all the listeners.
+     * The returned event will be emitted to all the listeners.
      *
      * This method is useful when creating an event instance is costly and
      * instantiation should happen only if there are listeners.
