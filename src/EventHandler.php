@@ -2,8 +2,9 @@
 
 namespace Kirameki\Event;
 
-use Closure;
+use Kirameki\Core\Exceptions\InvalidArgumentException;
 use Kirameki\Core\Exceptions\InvalidTypeException;
+use Kirameki\Event\Listeners\EventListenable;
 use function array_unshift;
 use function array_values;
 use function count;
@@ -16,7 +17,7 @@ class EventHandler
 {
     /**
      * @param class-string<TEvent> $class
-     * @param list<EventCallback<TEvent>> $listeners
+     * @param list<EventListenable<TEvent>> $listeners
      */
     public function __construct(
         public string $class = Event::class,
@@ -24,45 +25,43 @@ class EventHandler
     )
     {
         if (!is_a($class, Event::class, true)) {
-            throw new InvalidTypeException("Expected class to be instance of " . Event::class . ", got {$class}");
+            throw new InvalidArgumentException("Expected class to be instance of " . Event::class . ", got {$class}");
         }
     }
 
     /**
      * Append a listener to the end of the list.
      *
-     * @param Closure(TEvent): mixed $callback
-     * @param bool $once
+     * @param EventListenable<TEvent> $listener
      * @return void
      */
-    public function append(Closure $callback, bool $once = false): void
+    public function append(EventListenable $listener): void
     {
-        $this->listeners[] = new EventCallback($callback, $once);
+        $this->listeners[] = $listener;
     }
 
     /**
      * Prepend a listener to the end of the list.
      *
-     * @param Closure(TEvent): mixed $callback
-     * @param bool $once
+     * @param EventListenable<TEvent> $listener
      * @return void
      */
-    public function prepend(Closure $callback, bool $once = false): void
+    public function prepend(EventListenable $listener): void
     {
-        array_unshift($this->listeners, new EventCallback($callback, $once));
+        array_unshift($this->listeners, $listener);
     }
 
     /**
      * Returns the number of listeners that were removed.
      *
-     * @param Closure(TEvent): mixed $callback
+     * @param EventListenable<TEvent> $listener
      * @return int<0, max>
      */
-    public function removeListener(Closure $callback): int
+    public function removeListener(EventListenable $listener): int
     {
         $count = 0;
-        foreach ($this->listeners as $index => $listener) {
-            if ($listener->callback === $callback) {
+        foreach ($this->listeners as $index => $_listener) {
+            if ($_listener->isEqual($listener)) {
                 unset($this->listeners[$index]);
                 $count++;
             }
@@ -118,9 +117,9 @@ class EventHandler
         $evicting = [];
         $callCount = 0;
         foreach ($this->listeners as $index => $listener) {
-            $listener($event);
+            $listener->invoke($event);
             $callCount++;
-            if ($listener->once || $event->willEvictCallback()) {
+            if ($listener->shouldEvict() || $event->willEvictCallback()) {
                 $evicting[] = $index;
             }
             $canceled = $event->isCanceled();

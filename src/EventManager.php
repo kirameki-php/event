@@ -4,6 +4,9 @@ namespace Kirameki\Event;
 
 use Closure;
 use Kirameki\Core\Exceptions\LogicException;
+use Kirameki\Event\Listeners\CallbackListener;
+use Kirameki\Event\Listeners\CallbackOnceListener;
+use Kirameki\Event\Listeners\EventListenable;
 use ReflectionFunction;
 use ReflectionNamedType;
 use function is_a;
@@ -31,11 +34,14 @@ class EventManager
      * @param Closure(TEvent): mixed $callback
      * @param bool $once
      * [Optional] Whether the listener should be removed after it's called once.
-     * @return void
+     * @return EventListenable<TEvent>
      */
-    public function on(Closure $callback, bool $once = false): void
+    public function on(Closure $callback, bool $once = false): EventListenable
     {
-        $this->append($this->extractEventName($callback), $callback, $once);
+        $name = $this->extractEventName($callback);
+        $listener = new CallbackListener($name, $callback, $once);
+        $this->append($listener);
+        return $listener;
     }
 
     /**
@@ -45,49 +51,43 @@ class EventManager
      *
      * @template TEvent of Event
      * @param Closure(TEvent): mixed $callback
-     * @return void
+     * @return EventListenable<TEvent>
      */
-    public function once(Closure $callback): void
+    public function once(Closure $callback): EventListenable
     {
-        $this->append($this->extractEventName($callback), $callback, true);
+        return $this->on($callback, true);
     }
 
     /**
      * Appends a listener to the beginning of the list for the given event.
      *
      * @template TEvent of Event
-     * @param class-string<TEvent> $name
-     * @param Closure(TEvent): mixed $callback
-     * @param bool $once
-     * [Optional] Whether the listener should be removed after it's called once.
+     * @param EventListenable<TEvent> $listener
      * @return void
      */
-    public function append(string $name, Closure $callback, bool $once = false): void
+    public function append(EventListenable $listener): void
     {
+        $name = $listener->getEventClass();
         $handler = $this->getHandlerOrNull($name);
-        if ($handler === null) {
-            $handler = $this->handlers[$name] = new EventHandler($name);
-        }
-        $handler->append($callback, $once);
+        $handler ??= $this->handlers[$name] = new EventHandler($name);
+        $handler->append($listener);
     }
 
     /**
      * Prepends a listener to the beginning of the list for the given event.
      *
      * @template TEvent of Event
-     * @param class-string<TEvent> $name
-     * @param Closure(TEvent): mixed $callback
-     * @param bool $once
-     * [Optional] Whether the listener should be removed after it's called once.
+     * @param EventListenable<TEvent> $listener
      * @return void
      */
-    public function prepend(string $name, Closure $callback, bool $once = false): void
+    public function prepend(EventListenable $listener): void
     {
+        $name = $listener->getEventClass();
         $handler = $this->getHandlerOrNull($name);
         if ($handler === null) {
             $handler = $this->handlers[$name] = new EventHandler($name);
         }
-        $handler->prepend($callback, $once);
+        $handler->prepend($listener);
     }
 
     /**
@@ -159,20 +159,20 @@ class EventManager
      * Returns the number of listeners that were removed.
      *
      * @template TEvent of Event
-     * @param class-string<TEvent> $name
-     * @param Closure(TEvent): mixed $callback
+     * @param EventListenable<TEvent> $listener
      * @return int<0, max>
      */
-    public function removeListener(string $name, Closure $callback): int
+    public function removeListener(EventListenable $listener): int
     {
         $count = 0;
 
+        $name = $listener->getEventClass();
         $handler = $this->getHandlerOrNull($name);
         if ($handler === null) {
             return $count;
         }
 
-        $count += $handler->removeListener($callback);
+        $count += $handler->removeListener($listener);
 
         if (!$handler->hasListeners()) {
             unset($this->handlers[$name]);

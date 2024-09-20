@@ -2,7 +2,7 @@
 
 namespace Tests\Kirameki\Event;
 
-use Kirameki\Core\Exceptions\InvalidTypeException;
+use Kirameki\Core\Exceptions\InvalidArgumentException;
 use Kirameki\Core\Testing\TestCase;
 use Kirameki\Event\Event;
 use Kirameki\Event\EventHandler;
@@ -31,7 +31,7 @@ final class EventHandlerTest extends TestCase
     public function test_instantiate_wrong_class(): void
     {
         $this->expectExceptionMessage('Expected class to be instance of Kirameki\Event\Event, got stdClass');
-        $this->expectException(InvalidTypeException::class);
+        $this->expectException(InvalidArgumentException::class);
         new EventHandler(stdClass::class);
     }
 
@@ -177,7 +177,7 @@ final class EventHandlerTest extends TestCase
     public function test_emit_invalid_class(): void
     {
         $this->expectExceptionMessage('Expected event to be instance of ' . EventA::class . ', got ' . EventB::class);
-        $this->expectException(InvalidTypeException::class);
+        $this->expectException(InvalidArgumentException::class);
         $event1 = new EventA();
         $event2 = new EventB();
         $handler = new EventHandler($event1::class);
