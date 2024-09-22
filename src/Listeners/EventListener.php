@@ -7,7 +7,7 @@ use Kirameki\Event\Event;
 /**
  * @template TEvent of Event
  */
-interface EventListenable
+interface EventListener
 {
     /**
      * @return class-string<TEvent>
@@ -18,11 +18,6 @@ interface EventListenable
      * @param TEvent $event
      */
     public function invoke(Event $event): void;
-
-    /**
-     * @return bool
-     */
-    public function shouldEvict(): bool;
 
     /**
      * @param self<Event> $listener

@@ -4,11 +4,13 @@ namespace Kirameki\Event;
 
 use Kirameki\Core\Exceptions\InvalidArgumentException;
 use Kirameki\Core\Exceptions\InvalidTypeException;
-use Kirameki\Event\Listeners\EventListenable;
+use Kirameki\Event\Listeners\EventListener;
 use function array_unshift;
 use function array_values;
 use function count;
+use function current;
 use function is_a;
+use function next;
 
 /**
  * @template TEvent of Event
@@ -17,7 +19,7 @@ class EventHandler
 {
     /**
      * @param class-string<TEvent> $class
-     * @param list<EventListenable<TEvent>> $listeners
+     * @param list<EventListener<TEvent>> $listeners
      */
     public function __construct(
         public string $class = Event::class,
@@ -32,10 +34,10 @@ class EventHandler
     /**
      * Append a listener to the end of the list.
      *
-     * @param EventListenable<TEvent> $listener
+     * @param EventListener<TEvent> $listener
      * @return void
      */
-    public function append(EventListenable $listener): void
+    public function append(EventListener $listener): void
     {
         $this->listeners[] = $listener;
     }
@@ -43,10 +45,10 @@ class EventHandler
     /**
      * Prepend a listener to the end of the list.
      *
-     * @param EventListenable<TEvent> $listener
+     * @param EventListener<TEvent> $listener
      * @return void
      */
-    public function prepend(EventListenable $listener): void
+    public function prepend(EventListener $listener): void
     {
         array_unshift($this->listeners, $listener);
     }
@@ -54,22 +56,21 @@ class EventHandler
     /**
      * Returns the number of listeners that were removed.
      *
-     * @param EventListenable<TEvent> $listener
+     * @param EventListener<TEvent> $listener
      * @return int<0, max>
      */
-    public function removeListener(EventListenable $listener): int
+    public function removeListener(EventListener $listener): int
     {
-        $count = 0;
-        foreach ($this->listeners as $index => $_listener) {
-            if ($_listener->isEqual($listener)) {
-                unset($this->listeners[$index]);
-                $count++;
+        $indexes = [];
+        foreach ($this->listeners as $index => $compare) {
+            if ($compare->isEqual($listener)) {
+                $indexes[] = $index;
             }
         }
-        if ($count > 0) {
-            $this->listeners = array_values($this->listeners);
-        }
-        return $count;
+
+        $this->evictListeners($indexes);
+
+        return count($indexes);
     }
 
     /**
@@ -119,7 +120,7 @@ class EventHandler
         foreach ($this->listeners as $index => $listener) {
             $listener->invoke($event);
             $callCount++;
-            if ($listener->shouldEvict() || $event->willEvictCallback()) {
+            if ($event->willEvictCallback()) {
                 $evicting[] = $index;
             }
             $canceled = $event->isCanceled();
@@ -129,13 +130,31 @@ class EventHandler
                 break;
             }
         }
-        if ($evicting !== []) {
-            foreach ($evicting as $index) {
-                unset($this->listeners[$index]);
-            }
-            $this->listeners = array_values($this->listeners);
-        }
+
+        $this->evictListeners($evicting);
 
         return $callCount;
+    }
+
+    /**
+     * @param list<int> $indexes
+     * @return void
+     */
+    protected function evictListeners(array $indexes): void
+    {
+        if ($indexes === []) {
+            return;
+        }
+
+        $newListeners = [];
+        $removing = current($indexes);
+        foreach ($this->listeners as $index => $listener) {
+            if ($index !== $removing) {
+                $newListeners[] = $listener;
+                continue;
+            }
+            $removing = next($indexes);
+        }
+        $this->listeners = $newListeners;
     }
 }

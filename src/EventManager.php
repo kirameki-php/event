@@ -6,9 +6,7 @@ use Closure;
 use Kirameki\Core\Exceptions\LogicException;
 use Kirameki\Event\Listeners\CallbackListener;
 use Kirameki\Event\Listeners\CallbackOnceListener;
-use Kirameki\Event\Listeners\EventListenable;
-use ReflectionFunction;
-use ReflectionNamedType;
+use Kirameki\Event\Listeners\EventListener;
 use function is_a;
 
 class EventManager
@@ -34,12 +32,13 @@ class EventManager
      * @param Closure(TEvent): mixed $callback
      * @param bool $once
      * [Optional] Whether the listener should be removed after it's called once.
-     * @return EventListenable<TEvent>
+     * @return ($once is true ? CallbackOnceListener<TEvent> : CallbackListener<TEvent>)
      */
-    public function on(Closure $callback, bool $once = false): EventListenable
+    public function on(Closure $callback, bool $once = false): CallbackListener
     {
-        $name = $this->extractEventName($callback);
-        $listener = new CallbackListener($name, $callback, $once);
+        $listener = $once
+            ? new CallbackOnceListener($callback)
+            : new CallbackListener($callback);
         $this->append($listener);
         return $listener;
     }
@@ -51,9 +50,9 @@ class EventManager
      *
      * @template TEvent of Event
      * @param Closure(TEvent): mixed $callback
-     * @return EventListenable<TEvent>
+     * @return CallbackOnceListener<TEvent>
      */
-    public function once(Closure $callback): EventListenable
+    public function once(Closure $callback): CallbackOnceListener
     {
         return $this->on($callback, true);
     }
@@ -62,10 +61,10 @@ class EventManager
      * Appends a listener to the beginning of the list for the given event.
      *
      * @template TEvent of Event
-     * @param EventListenable<TEvent> $listener
+     * @param EventListener<TEvent> $listener
      * @return void
      */
-    public function append(EventListenable $listener): void
+    public function append(EventListener $listener): void
     {
         $name = $listener->getEventClass();
         $handler = $this->getHandlerOrNull($name);
@@ -77,10 +76,10 @@ class EventManager
      * Prepends a listener to the beginning of the list for the given event.
      *
      * @template TEvent of Event
-     * @param EventListenable<TEvent> $listener
+     * @param EventListener<TEvent> $listener
      * @return void
      */
-    public function prepend(EventListenable $listener): void
+    public function prepend(EventListener $listener): void
     {
         $name = $listener->getEventClass();
         $handler = $this->getHandlerOrNull($name);
@@ -159,10 +158,10 @@ class EventManager
      * Returns the number of listeners that were removed.
      *
      * @template TEvent of Event
-     * @param EventListenable<TEvent> $listener
+     * @param EventListener<TEvent> $listener
      * @return int<0, max>
      */
-    public function removeListener(EventListenable $listener): int
+    public function removeListener(EventListener $listener): int
     {
         $count = 0;
 
@@ -218,31 +217,5 @@ class EventManager
     {
         /** @var EventHandler<TEvent>|null */
         return $this->handlers[$name] ?? null;
-    }
-
-    /**
-     * Extracts the event class name from the given callback.
-     * The callback must have an Event as the first parameter.
-     *
-     * @template TEvent of Event
-     * @param Closure(TEvent): mixed $callback
-     * @return class-string<TEvent>
-     */
-    protected function extractEventName(Closure $callback): string
-    {
-        $paramReflection = (new ReflectionFunction($callback))->getParameters()[0] ?? null;
-        $type = $paramReflection?->getType();
-        $name = ($type instanceof ReflectionNamedType)
-            ? $type->getName()
-            : '';
-
-        if (!is_a($name, Event::class, true)) {
-            throw new LogicException('The first parameter of the callback must be an instance of Event.', [
-                'callback' => $callback,
-            ]);
-        }
-
-        /** @var class-string<TEvent> */
-        return $name;
     }
 }
