@@ -6,6 +6,8 @@ use DateTime;
 use Kirameki\Core\Exceptions\LogicException;
 use Kirameki\Event\Event;
 use Kirameki\Event\EventManager;
+use Kirameki\Event\Listeners\CallbackListener;
+use Kirameki\Event\Listeners\CallbackOnceListener;
 use Tests\Kirameki\Event\Samples\Saving;
 
 class EventEmitterTest extends TestCase
@@ -81,7 +83,7 @@ class EventEmitterTest extends TestCase
 
     public function test_append_valid(): void
     {
-        $this->emitter->append(Saving::class, fn(Saving $e) => $this->results[] = $e);
+        $this->emitter->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
 
         $event1 = new Saving('test');
         $event2 = new Saving('test');
@@ -93,7 +95,7 @@ class EventEmitterTest extends TestCase
 
     public function test_append_once(): void
     {
-        $this->emitter->append(Saving::class, fn(Saving $e) => $this->results[] = $e, true);
+        $this->emitter->append(new CallbackOnceListener(fn(Saving $e) => $this->results[] = $e));
 
         $this->assertTrue($this->emitter->hasListeners(Saving::class));
 
@@ -111,8 +113,8 @@ class EventEmitterTest extends TestCase
 
     public function test_append_with_cancel(): void
     {
-        $this->emitter->append(Saving::class, fn(Saving $e) => $e->cancel());
-        $this->emitter->append(Saving::class, fn(Saving $e) => $this->results[] = $e);
+        $this->emitter->append(new CallbackListener(fn(Saving $e) => $e->cancel()));
+        $this->emitter->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
 
         $event = new Saving('test');
         $this->emitter->emit($event);
@@ -124,8 +126,8 @@ class EventEmitterTest extends TestCase
     public function test_prepend_valid(): void
     {
         $called = [];
-        $this->emitter->append(Saving::class, function () use (&$called) { $called[] = 'a'; });
-        $this->emitter->prepend(Saving::class, function () use (&$called) { $called[] = 'b'; });
+        $this->emitter->append(new CallbackListener(function (Saving $_) use (&$called) { $called[] = 'a'; }));
+        $this->emitter->prepend(new CallbackListener(function (Saving $_) use (&$called) { $called[] = 'b'; }));
 
         $this->emitter->emit(new Saving('test'));
 
@@ -134,7 +136,7 @@ class EventEmitterTest extends TestCase
 
     public function test_prepend_once(): void
     {
-        $this->emitter->prepend(Saving::class, fn(Saving $e) => $this->results[] = $e, true);
+        $this->emitter->prepend(new CallbackOnceListener(fn(Saving $e) => $this->results[] = $e));
 
         $this->assertTrue($this->emitter->hasListeners(Saving::class));
 
@@ -152,8 +154,8 @@ class EventEmitterTest extends TestCase
 
     public function test_prepend_with_cancel(): void
     {
-        $this->emitter->prepend(Saving::class, fn(Saving $e) => $this->results[] = $e);
-        $this->emitter->prepend(Saving::class, fn(Saving $e) => $e->cancel());
+        $this->emitter->prepend(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
+        $this->emitter->prepend(new CallbackListener(fn(Saving $e) => $e->cancel()));
 
         $event = new Saving('test');
         $this->emitter->emit($event);
@@ -166,14 +168,14 @@ class EventEmitterTest extends TestCase
     {
         $this->assertFalse($this->emitter->hasListeners(Saving::class));
 
-        $this->emitter->append(Saving::class, fn(Saving $e) => true);
+        $this->emitter->append(new CallbackListener(fn(Saving $e) => true));
 
         $this->assertTrue($this->emitter->hasListeners(Saving::class));
     }
 
     public function test_emit(): void
     {
-        $this->emitter->append(Saving::class, fn(Saving $e) => $this->results[] = $e);
+        $this->emitter->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
 
         $event1 = new Saving('test');
         $this->emitter->emit($event1);
@@ -183,7 +185,7 @@ class EventEmitterTest extends TestCase
 
     public function test_emitIfListening_with_listener(): void
     {
-        $this->emitter->append(Saving::class, fn(Saving $e) => $this->results[] = $e);
+        $this->emitter->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
 
         $this->emitter->emitIfListening(Saving::class, fn() => new Saving('foo'));
 
@@ -206,22 +208,22 @@ class EventEmitterTest extends TestCase
         $this->expectExceptionMessage('$event must be an instance of ' . Saving::class);
         $this->expectException(LogicException::class);
 
-        $this->emitter->append(Saving::class, fn(Saving $e) => $this->results[] = $e);
+        $this->emitter->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
 
         $this->emitter->emitIfListening(Saving::class, fn() => new DateTime());
     }
 
     public function test_removeListener(): void
     {
-        $callback = fn(Saving $e) => $this->results[] = $e;
+        $callback = new CallbackListener(fn(Saving $e) => $this->results[] = $e);
 
-        $this->assertSame(0, $this->emitter->removeListener(Saving::class, $callback));
+        $this->assertSame(0, $this->emitter->removeListener($callback));
         $this->assertFalse($this->emitter->hasListeners(Saving::class));
 
-        $this->emitter->append(Saving::class, $callback);
+        $this->emitter->append($callback);
 
         $this->assertTrue($this->emitter->hasListeners(Saving::class));
-        $this->assertSame(1, $this->emitter->removeListener(Saving::class, $callback));
+        $this->assertSame(1, $this->emitter->removeListener($callback));
         $this->assertFalse($this->emitter->hasListeners(Saving::class));
     }
 
@@ -229,8 +231,8 @@ class EventEmitterTest extends TestCase
     {
         self::assertFalse($this->emitter->removeAllListeners(Saving::class));
 
-        $this->emitter->append(Saving::class, fn(Saving $e) => true);
-        $this->emitter->append(Saving::class, fn(Saving $e) => false);
+        $this->emitter->append(new CallbackListener(fn(Saving $e) => true));
+        $this->emitter->append(new CallbackListener(fn(Saving $e) => false));
 
         $this->assertTrue($this->emitter->hasListeners(Saving::class));
         $this->assertTrue($this->emitter->removeAllListeners(Saving::class));

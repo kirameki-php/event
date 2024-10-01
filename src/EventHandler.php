@@ -6,7 +6,6 @@ use Kirameki\Core\Exceptions\InvalidArgumentException;
 use Kirameki\Core\Exceptions\InvalidTypeException;
 use Kirameki\Event\Listeners\EventListener;
 use function array_unshift;
-use function array_values;
 use function count;
 use function current;
 use function is_a;
