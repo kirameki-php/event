@@ -13,6 +13,7 @@ use function next;
 
 /**
  * @template TEvent of Event
+ * @internal This class is not meant to be used directly.
  */
 class EventHandler
 {

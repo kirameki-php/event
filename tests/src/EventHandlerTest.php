@@ -2,7 +2,6 @@
 
 namespace Tests\Kirameki\Event;
 
-use Grpc\Call;
 use Kirameki\Core\Exceptions\InvalidArgumentException;
 use Kirameki\Core\Exceptions\InvalidTypeException;
 use Kirameki\Core\Testing\TestCase;
@@ -13,6 +12,9 @@ use Kirameki\Event\Listeners\CallbackOnceListener;
 use stdClass;
 use Tests\Kirameki\Event\Samples\EventA;
 use Tests\Kirameki\Event\Samples\EventB;
+use function array_pop;
+use function array_splice;
+use function dump;
 
 final class EventHandlerTest extends TestCase
 {
@@ -69,6 +71,26 @@ final class EventHandlerTest extends TestCase
         $this->assertFalse($handler->hasListeners());
     }
 
+    public function test_append_nested(): void
+    {
+        $event1 = new EventA();
+        $handler = new EventHandler($event1::class);
+        $counter = [];
+        $listener = new CallbackOnceListener(function(EventA $e) use ($handler, &$counter) {
+            $counter[] = 1;
+            $handler->append(new CallbackListener(function(EventA $e) use (&$counter) {
+                $counter[] = 2;
+            }));
+        });
+        $handler->append($listener);
+        $handler->emit($event1);
+        $this->assertSame([1], $counter);
+        $handler->emit($event1);
+        $this->assertSame([1, 2], $counter);
+        $handler->emit($event1);
+        $this->assertSame([1, 2, 2], $counter);
+    }
+
     public function test_prepend(): void
     {
         $handler = new EventHandler(EventA::class);
@@ -102,10 +124,10 @@ final class EventHandlerTest extends TestCase
 
     public function test_emit(): void
     {
-        $event = new class extends Event {};
+        $event = new EventA();
         $handler = new EventHandler($event::class);
         $emitted = 0;
-        $callback = function($e) use ($event, &$emitted) {
+        $callback = function(EventA $e) use ($event, &$emitted) {
             $emitted++;
             $this->assertSame($event, $e);
         };
