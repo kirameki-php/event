@@ -12,9 +12,6 @@ use Kirameki\Event\Listeners\CallbackOnceListener;
 use stdClass;
 use Tests\Kirameki\Event\Samples\EventA;
 use Tests\Kirameki\Event\Samples\EventB;
-use function array_pop;
-use function array_splice;
-use function dump;
 
 final class EventHandlerTest extends TestCase
 {
