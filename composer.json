@@ -30,7 +30,8 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "scripts": {
-    "test": "vendor/bin/phpunit --coverage-html coverage",
+    "test": "vendor/bin/phpunit --coverage-html=coverage",
+    "ci-test": "vendor/bin/phpunit --coverage-clover ./coverage.xml",
     "analyze": "vendor/bin/phpstan analyse --memory-limit 1G"
   }
 }
