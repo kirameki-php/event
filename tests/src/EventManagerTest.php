@@ -6,6 +6,7 @@ use DateTime;
 use Kirameki\Core\Exceptions\InvalidArgumentException;
 use Kirameki\Core\Exceptions\LogicException;
 use Kirameki\Event\Event;
+use Kirameki\Event\EventEmitter;
 use Kirameki\Event\EventManager;
 use Kirameki\Event\Listeners\CallbackListener;
 use Kirameki\Event\Listeners\CallbackOnceListener;
@@ -24,6 +25,11 @@ class EventManagerTest extends TestCase
     {
         parent::setUp();
         $this->events = new EventManager();
+    }
+
+    public function test_instanceof_EventEmitter(): void
+    {
+        $this->assertInstanceOf(EventEmitter::class, $this->events);
     }
 
     public function test_on_valid(): void

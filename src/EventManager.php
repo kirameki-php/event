@@ -7,9 +7,10 @@ use Kirameki\Core\Exceptions\LogicException;
 use Kirameki\Event\Listeners\CallbackListener;
 use Kirameki\Event\Listeners\CallbackOnceListener;
 use Kirameki\Event\Listeners\EventListener;
+use Override;
 use function is_a;
 
-class EventManager
+class EventManager implements EventEmitter
 {
     /**
      * @var array<class-string, EventHandler<Event>>
@@ -91,12 +92,9 @@ class EventManager
     }
 
     /**
-     * Calls all listeners for the given event.
-     *
-     * @template TEvent of Event
-     * @param TEvent $event
-     * @return void
+     * @inheritDoc
      */
+    #[Override]
     public function emit(Event $event): void
     {
         $count = 0;
@@ -114,18 +112,9 @@ class EventManager
     }
 
     /**
-     * Invokes the callback if there are any listeners for the given event.
-     * The invoked callback must return an instance of the given event class.
-     * The returned event will be emitted to all the listeners.
-     *
-     * This method is useful when creating an event instance is costly and
-     * instantiation should happen only if there are listeners.
-     *
-     * @template TEvent of Event
-     * @param class-string<TEvent> $name
-     * @param Closure(): TEvent $callback
-     * @return void
+     * @inheritDoc
      */
+    #[Override]
     public function emitIfListening(string $name, Closure $callback): void
     {
         if (!$this->hasListeners($name)) {
