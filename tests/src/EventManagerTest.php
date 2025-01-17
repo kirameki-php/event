@@ -174,36 +174,6 @@ class EventManagerTest extends TestCase
         $this->assertSame([$event1], $this->results);
     }
 
-    public function test_emitIfListening_with_listener(): void
-    {
-        $this->events->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
-
-        $this->events->emitIfListening(Saving::class, fn() => new Saving('foo'));
-
-        $this->assertCount(1, $this->results);
-        $this->assertInstanceOf(Saving::class, $this->results[0]);
-    }
-
-    public function test_emitIfListening_without_listener(): void
-    {
-        $this->events->emitIfListening(
-            Saving::class,
-            fn() => $this->results[] = new Saving('foo'),
-        );
-
-        $this->assertCount(0, $this->results);
-    }
-
-    public function test_emitIfListening_bad_type(): void
-    {
-        $this->expectExceptionMessage('$event must be an instance of ' . Saving::class);
-        $this->expectException(LogicException::class);
-
-        $this->events->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
-
-        $this->events->emitIfListening(Saving::class, fn() => new DateTime());
-    }
-
     public function test_removeListener(): void
     {
         $callback = new CallbackListener(fn(Saving $e) => $this->results[] = $e);

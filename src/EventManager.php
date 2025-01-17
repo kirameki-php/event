@@ -112,27 +112,6 @@ class EventManager implements EventEmitter
     }
 
     /**
-     * @inheritDoc
-     */
-    #[Override]
-    public function emitIfListening(string $name, Closure $callback): void
-    {
-        if (!$this->hasListeners($name)) {
-            return;
-        }
-
-        $event = $callback();
-        if (!is_a($event, $name)) {
-            throw new LogicException('$event must be an instance of ' . $name, [
-                'event' => $event,
-                'class' => $name,
-            ]);
-        }
-
-        $this->emit($event);
-    }
-
-    /**
      * Removes the given callback from the listeners of the given event.
      * Returns the number of listeners that were removed.
      *
