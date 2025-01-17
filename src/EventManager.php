@@ -29,18 +29,13 @@ class EventManager
      * it needs to extract the event class name from the callback using reflections.
      *
      * @template TEvent of Event
+     * @param class-string<TEvent> $class
      * @param Closure(TEvent): mixed $callback
-     * @param bool $once
-     * [Optional] Whether the listener should be removed after it's called once.
-     * @return ($once is true ? CallbackOnceListener<TEvent> : CallbackListener<TEvent>)
+     * @return CallbackListener<TEvent>
      */
-    public function on(Closure $callback, bool $once = false): CallbackListener
+    public function on(string $class, Closure $callback): CallbackListener
     {
-        $listener = $once
-            ? new CallbackOnceListener($callback)
-            : new CallbackListener($callback);
-        $this->append($listener);
-        return $listener;
+        return $this->append(new CallbackListener($callback, $class));
     }
 
     /**
@@ -49,44 +44,39 @@ class EventManager
      * removed after it's called once.
      *
      * @template TEvent of Event
+     * @param class-string<TEvent> $class
      * @param Closure(TEvent): mixed $callback
      * @return CallbackOnceListener<TEvent>
      */
-    public function once(Closure $callback): CallbackOnceListener
+    public function once(string $class, Closure $callback): CallbackOnceListener
     {
-        return $this->on($callback, true);
+        return $this->append(new CallbackOnceListener($callback, $class));
     }
 
     /**
      * Appends a listener to the beginning of the list for the given event.
      *
      * @template TEvent of Event
-     * @param EventListener<TEvent> $listener
-     * @return void
+     * @template TListener of EventListener<TEvent>
+     * @param TListener $listener
+     * @return TListener
      */
-    public function append(EventListener $listener): void
+    public function append(EventListener $listener): EventListener
     {
-        $name = $listener->getEventClass();
-        $handler = $this->getHandlerOrNull($name);
-        $handler ??= $this->handlers[$name] = new EventHandler($name);
-        $handler->append($listener);
+        return $this->resolveHandler($listener)->append($listener);
     }
 
     /**
      * Prepends a listener to the beginning of the list for the given event.
      *
      * @template TEvent of Event
-     * @param EventListener<TEvent> $listener
-     * @return void
+     * @template TListener of EventListener<TEvent>
+     * @param TListener $listener
+     * @return TListener
      */
-    public function prepend(EventListener $listener): void
+    public function prepend(EventListener $listener): EventListener
     {
-        $name = $listener->getEventClass();
-        $handler = $this->getHandlerOrNull($name);
-        if ($handler === null) {
-            $handler = $this->handlers[$name] = new EventHandler($name);
-        }
-        $handler->prepend($listener);
+        return $this->resolveHandler($listener)->prepend($listener);
     }
 
     /**
@@ -165,8 +155,8 @@ class EventManager
     {
         $count = 0;
 
-        $name = $listener->getEventClass();
-        $handler = $this->getHandlerOrNull($name);
+        $class = $listener->getEventClass();
+        $handler = $this->getHandlerOrNull($class);
         if ($handler === null) {
             return $count;
         }
@@ -174,7 +164,7 @@ class EventManager
         $count += $handler->removeListener($listener);
 
         if (!$handler->hasListeners()) {
-            unset($this->handlers[$name]);
+            unset($this->handlers[$class]);
         }
 
         return $count;
@@ -210,12 +200,25 @@ class EventManager
      * Get the handler for the given event.
      *
      * @template TEvent of Event
-     * @param class-string<TEvent> $name
+     * @param class-string<TEvent> $class
      * @return EventHandler<TEvent>|null
      */
-    protected function getHandlerOrNull(string $name): ?EventHandler
+    protected function getHandlerOrNull(string $class): ?EventHandler
     {
         /** @var EventHandler<TEvent>|null */
-        return $this->handlers[$name] ?? null;
+        return $this->handlers[$class] ?? null;
+    }
+
+    /**
+     * @template TEvent of Event
+     * @param EventListener<TEvent> $listener
+     * @return EventHandler<TEvent>
+     */
+    protected function resolveHandler(EventListener $listener): EventHandler
+    {
+        $class = $listener->getEventClass();
+        $handler = $this->getHandlerOrNull($class);
+        $handler ??= $this->handlers[$class] = new EventHandler($class);
+        return $handler;
     }
 }

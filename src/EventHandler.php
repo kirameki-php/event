@@ -2,8 +2,11 @@
 
 namespace Kirameki\Event;
 
+use Closure;
 use Kirameki\Core\Exceptions\InvalidArgumentException;
 use Kirameki\Core\Exceptions\InvalidTypeException;
+use Kirameki\Event\Listeners\CallbackListener;
+use Kirameki\Event\Listeners\CallbackOnceListener;
 use Kirameki\Event\Listeners\EventListener;
 use function array_unshift;
 use function count;
@@ -27,30 +30,62 @@ class EventHandler
     )
     {
         if (!is_a($class, Event::class, true)) {
-            throw new InvalidArgumentException("Expected class to be instance of " . Event::class . ", got {$class}");
+            throw new InvalidArgumentException("Expected class to be instance of " . Event::class . ", got {$class}.");
         }
+    }
+
+    /**
+     * Appends a listener to the beginning of the list for the given event.
+     * This method must have an Event as the first parameter.
+     *
+     * This method is useful and cleaner than using append() but is slower since
+     * it needs to extract the event class name from the callback using reflections.
+     *
+     * @param Closure(TEvent): mixed $callback
+     * @return CallbackListener<TEvent>
+     */
+    public function on(Closure $callback): CallbackListener
+    {
+        return $this->append(new CallbackListener($callback, $this->class));
+    }
+
+    /**
+     * Appends a listener to the beginning of the list for the given event.
+     * This method must have an Event as the first parameter. Listener will be
+     * removed after it's called once.
+     *
+     * @param Closure(TEvent): mixed $callback
+     * @return CallbackOnceListener<TEvent>
+     */
+    public function once(Closure $callback): CallbackOnceListener
+    {
+        return $this->append(new CallbackOnceListener($callback, $this->class));
     }
 
     /**
      * Append a listener to the end of the list.
      *
-     * @param EventListener<TEvent> $listener
-     * @return void
+     * @template TListener of EventListener<TEvent>
+     * @param TListener $listener
+     * @return TListener
      */
-    public function append(EventListener $listener): void
+    public function append(EventListener $listener): EventListener
     {
         $this->listeners[] = $listener;
+        return $listener;
     }
 
     /**
      * Prepend a listener to the end of the list.
      *
-     * @param EventListener<TEvent> $listener
-     * @return void
+     * @template TListener of EventListener<TEvent>
+     * @param TListener $listener
+     * @return TListener
      */
-    public function prepend(EventListener $listener): void
+    public function prepend(EventListener $listener): EventListener
     {
         array_unshift($this->listeners, $listener);
+        return $listener;
     }
 
     /**
