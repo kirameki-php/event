@@ -3,12 +3,10 @@
 namespace Kirameki\Event;
 
 use Closure;
-use Kirameki\Core\Exceptions\LogicException;
 use Kirameki\Event\Listeners\CallbackListener;
 use Kirameki\Event\Listeners\CallbackOnceListener;
 use Kirameki\Event\Listeners\EventListener;
 use Override;
-use function is_a;
 
 class EventManager implements EventEmitter
 {

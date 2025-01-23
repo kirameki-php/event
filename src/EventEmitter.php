@@ -2,8 +2,6 @@
 
 namespace Kirameki\Event;
 
-use Closure;
-
 interface EventEmitter
 {
     /**
