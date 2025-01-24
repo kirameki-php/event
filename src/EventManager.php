@@ -93,11 +93,11 @@ class EventManager implements EventEmitter
      * @inheritDoc
      */
     #[Override]
-    public function emit(Event $event): void
+    public function emit(Event $event, ?bool &$wasCanceled = null): void
     {
         $count = 0;
         if ($handler = $this->getHandlerOrNull($event::class)) {
-            $count = $handler->emit($event);
+            $count = $handler->emit($event, $wasCanceled);
 
             if (!$handler->hasListeners()) {
                 unset($this->handlers[$event::class]);

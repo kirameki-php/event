@@ -107,8 +107,7 @@ class EventManagerTest extends TestCase
         $this->events->append(new CallbackListener(fn(Saving $e) => $e->cancel()));
         $this->events->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
 
-        $event = new Saving('test');
-        $this->events->emit($event);
+        $this->events->emit(new Saving('test'));
 
         $this->assertTrue($this->events->hasListeners(Saving::class));
         $this->assertCount(0, $this->results);
@@ -149,10 +148,11 @@ class EventManagerTest extends TestCase
         $this->events->prepend(new CallbackListener(fn(Saving $e) => $e->cancel()));
 
         $event = new Saving('test');
-        $this->events->emit($event);
+        $this->events->emit($event, $canceled);
 
         $this->assertTrue($this->events->hasListeners(Saving::class));
         $this->assertCount(0, $this->results);
+        $this->assertTrue($canceled);
     }
 
     public function test_hasListeners(): void
@@ -172,6 +172,29 @@ class EventManagerTest extends TestCase
         $this->events->emit($event1);
 
         $this->assertSame([$event1], $this->results);
+    }
+
+    public function test_emit__with_canceled_ref(): void
+    {
+        $this->events->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
+
+        $event1 = new Saving('test');
+        $this->events->emit($event1, $canceled);
+
+        $this->assertSame([$event1], $this->results);
+        $this->assertFalse($canceled);
+    }
+
+    public function test_emit__with_cancel_triggered(): void
+    {
+        $this->events->append(new CallbackListener(fn(Saving $e) => $e->cancel()));
+        $this->events->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
+
+        $event1 = new Saving('test');
+        $this->events->emit($event1, $canceled);
+
+        $this->assertSame([], $this->results);
+        $this->assertTrue($canceled);
     }
 
     public function test_removeListener(): void
