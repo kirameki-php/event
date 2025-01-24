@@ -62,7 +62,7 @@ class EventManager implements EventEmitter
      */
     public function append(EventListener $listener): EventListener
     {
-        return $this->resolveHandler($listener)->append($listener);
+        return $this->resolveHandler($listener->getEventClass())->append($listener);
     }
 
     /**
@@ -75,7 +75,7 @@ class EventManager implements EventEmitter
      */
     public function prepend(EventListener $listener): EventListener
     {
-        return $this->resolveHandler($listener)->prepend($listener);
+        return $this->resolveHandler($listener->getEventClass())->prepend($listener);
     }
 
     /**
@@ -163,6 +163,16 @@ class EventManager implements EventEmitter
     }
 
     /**
+     * @template TEvent of Event
+     * @param class-string<TEvent> $class
+     * @return EventHandler<TEvent>
+     */
+    public function resolveHandler(string $class): EventHandler
+    {
+        return $this->handlers[$class] = $this->getHandlerOrNull($class) ?? new EventHandler($class);
+    }
+
+    /**
      * Get the handler for the given event.
      *
      * @template TEvent of Event
@@ -173,18 +183,5 @@ class EventManager implements EventEmitter
     {
         /** @var EventHandler<TEvent>|null */
         return $this->handlers[$class] ?? null;
-    }
-
-    /**
-     * @template TEvent of Event
-     * @param EventListener<TEvent> $listener
-     * @return EventHandler<TEvent>
-     */
-    protected function resolveHandler(EventListener $listener): EventHandler
-    {
-        $class = $listener->getEventClass();
-        $handler = $this->getHandlerOrNull($class);
-        $handler ??= $this->handlers[$class] = new EventHandler($class);
-        return $handler;
     }
 }
