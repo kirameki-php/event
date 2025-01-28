@@ -188,6 +188,7 @@ final class EventHandlerTest extends TestCase
             $emitted++;
         }));
 
+        $canceled = false;
         $this->assertSame(1, $handler->emit($event, $canceled));
         $this->assertFalse($event->isCanceled());
         $this->assertSame(1, $emitted);

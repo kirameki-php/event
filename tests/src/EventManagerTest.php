@@ -147,6 +147,7 @@ class EventManagerTest extends TestCase
         $this->events->prepend(new CallbackListener(fn(Saving $e) => $e->cancel()));
 
         $event = new Saving('test');
+        $canceled = false;
         $this->events->emit($event, $canceled);
 
         $this->assertTrue($this->events->hasListeners(Saving::class));
@@ -178,6 +179,7 @@ class EventManagerTest extends TestCase
         $this->events->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
 
         $event1 = new Saving('test');
+        $canceled = false;
         $this->events->emit($event1, $canceled);
 
         $this->assertSame([$event1], $this->results);
@@ -190,6 +192,7 @@ class EventManagerTest extends TestCase
         $this->events->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
 
         $event1 = new Saving('test');
+        $canceled = false;
         $this->events->emit($event1, $canceled);
 
         $this->assertSame([], $this->results);

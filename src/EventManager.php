@@ -10,10 +10,7 @@ use Override;
 
 class EventManager implements EventEmitter
 {
-    /**
-     * @var array<class-string, EventHandler<Event>>
-     */
-    protected array $handlers = [];
+    use HandlesEvents;
 
     /**
      * @var list<Closure(Event, int): mixed>
@@ -28,13 +25,13 @@ class EventManager implements EventEmitter
      * it needs to extract the event class name from the callback using reflections.
      *
      * @template TEvent of Event
-     * @param class-string<TEvent> $class
+     * @param class-string<TEvent> $name
      * @param Closure(TEvent): mixed $callback
      * @return CallbackListener<TEvent>
      */
-    public function on(string $class, Closure $callback): CallbackListener
+    public function on(string $name, Closure $callback): CallbackListener
     {
-        return $this->append(new CallbackListener($callback, $class));
+        return $this->resolveEventHandler($name)->do($callback);
     }
 
     /**
@@ -43,13 +40,13 @@ class EventManager implements EventEmitter
      * removed after it's called once.
      *
      * @template TEvent of Event
-     * @param class-string<TEvent> $class
+     * @param class-string<TEvent> $name
      * @param Closure(TEvent): mixed $callback
      * @return CallbackOnceListener<TEvent>
      */
-    public function once(string $class, Closure $callback): CallbackOnceListener
+    public function once(string $name, Closure $callback): CallbackOnceListener
     {
-        return $this->append(new CallbackOnceListener($callback, $class));
+        return $this->resolveEventHandler($name)->doOnce($callback);
     }
 
     /**
@@ -62,7 +59,7 @@ class EventManager implements EventEmitter
      */
     public function append(EventListener $listener): EventListener
     {
-        return $this->resolveHandler($listener->getEventClass())->append($listener);
+        return $this->resolveEventHandler($listener->getEventClass())->append($listener);
     }
 
     /**
@@ -75,7 +72,7 @@ class EventManager implements EventEmitter
      */
     public function prepend(EventListener $listener): EventListener
     {
-        return $this->resolveHandler($listener->getEventClass())->prepend($listener);
+        return $this->resolveEventHandler($listener->getEventClass())->prepend($listener);
     }
 
     /**
@@ -86,21 +83,21 @@ class EventManager implements EventEmitter
      */
     public function hasListeners(string $name): bool
     {
-        return array_key_exists($name, $this->handlers);
+        return $this->eventHasListeners($name);
     }
 
     /**
      * @inheritDoc
      */
     #[Override]
-    public function emit(Event $event, ?bool &$wasCanceled = null): void
+    public function emit(Event $event, bool &$wasCanceled = false): void
     {
         $count = 0;
-        if ($handler = $this->getHandlerOrNull($event::class)) {
+        if ($handler = $this->getEventHandlerOrNull($event::class)) {
             $count = $handler->emit($event, $wasCanceled);
 
             if (!$handler->hasListeners()) {
-                unset($this->handlers[$event::class]);
+                $this->removeEventHandler($event::class);
             }
         }
 
@@ -122,7 +119,7 @@ class EventManager implements EventEmitter
         $count = 0;
 
         $class = $listener->getEventClass();
-        $handler = $this->getHandlerOrNull($class);
+        $handler = $this->getEventHandlerOrNull($class);
         if ($handler === null) {
             return $count;
         }
@@ -130,7 +127,7 @@ class EventManager implements EventEmitter
         $count += $handler->removeListener($listener);
 
         if (!$handler->hasListeners()) {
-            unset($this->handlers[$class]);
+            $this->removeEventHandler($class);
         }
 
         return $count;
@@ -144,8 +141,8 @@ class EventManager implements EventEmitter
      */
     public function removeAllListeners(string $name): bool
     {
-        if ($this->hasListeners($name)) {
-            unset($this->handlers[$name]);
+        if ($this->eventHasListeners($name)) {
+            $this->removeEventHandler($name);
             return true;
         }
         return false;
@@ -160,28 +157,5 @@ class EventManager implements EventEmitter
     public function onEmitted(Closure $callback): void
     {
         $this->onEmittedCallbacks[] = $callback;
-    }
-
-    /**
-     * @template TEvent of Event
-     * @param class-string<TEvent> $class
-     * @return EventHandler<TEvent>
-     */
-    public function resolveHandler(string $class): EventHandler
-    {
-        return $this->handlers[$class] = $this->getHandlerOrNull($class) ?? new EventHandler($class);
-    }
-
-    /**
-     * Get the handler for the given event.
-     *
-     * @template TEvent of Event
-     * @param class-string<TEvent> $class
-     * @return EventHandler<TEvent>|null
-     */
-    protected function getHandlerOrNull(string $class): ?EventHandler
-    {
-        /** @var EventHandler<TEvent>|null */
-        return $this->handlers[$class] ?? null;
     }
 }

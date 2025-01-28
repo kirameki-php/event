@@ -9,9 +9,9 @@ interface EventEmitter
      *
      * @template TEvent of Event
      * @param TEvent $event
-     * @param bool|null $wasCanceled
+     * @param bool $wasCanceled
      * @param-out bool $wasCanceled
      * @return void
      */
-    public function emit(Event $event, ?bool &$wasCanceled = null): void;
+    public function emit(Event $event, bool &$wasCanceled = false): void;
 }

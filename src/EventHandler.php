@@ -139,13 +139,13 @@ class EventHandler
     /**
      * @param TEvent $event
      * Event to be emitted.
-     * @param bool|null $wasCanceled
+     * @param bool $wasCanceled
      * @param-out bool $wasCanceled
      * Flag to be set to true if the event propagation was stopped.
      * @return int<0, max>
      * The number of listeners that were called.
      */
-    public function emit(Event $event, ?bool &$wasCanceled = null): int
+    public function emit(Event $event, bool &$wasCanceled = false): int
     {
         if (!is_a($event, $this->class)) {
             throw new InvalidTypeException("Expected event to be instance of {$this->class}, got " . $event::class);
@@ -153,7 +153,6 @@ class EventHandler
 
         $evicting = [];
         $callCount = 0;
-        $wasCanceled ??= false;
         foreach ($this->listeners as $index => $listener) {
             $listener->invoke($event);
             $callCount++;
