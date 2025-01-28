@@ -44,7 +44,7 @@ class EventHandler
      * @param Closure(TEvent): mixed $callback
      * @return CallbackListener<TEvent>
      */
-    public function on(Closure $callback): CallbackListener
+    public function do(Closure $callback): CallbackListener
     {
         return $this->append(new CallbackListener($callback, $this->class));
     }
@@ -57,7 +57,7 @@ class EventHandler
      * @param Closure(TEvent): mixed $callback
      * @return CallbackOnceListener<TEvent>
      */
-    public function once(Closure $callback): CallbackOnceListener
+    public function doOnce(Closure $callback): CallbackOnceListener
     {
         return $this->append(new CallbackOnceListener($callback, $this->class));
     }

@@ -4,7 +4,6 @@ namespace Tests\Kirameki\Event;
 
 use DateTime;
 use Kirameki\Core\Exceptions\InvalidArgumentException;
-use Kirameki\Core\Exceptions\LogicException;
 use Kirameki\Event\Event;
 use Kirameki\Event\EventEmitter;
 use Kirameki\Event\EventManager;
