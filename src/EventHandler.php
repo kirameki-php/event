@@ -16,17 +16,19 @@ use function next;
 
 /**
  * @template TEvent of Event
- * @internal This class is not meant to be used directly.
  */
 class EventHandler
 {
     /**
+     * @var list<EventListener<TEvent>>
+     */
+    public protected(set) array $listeners = [];
+
+    /**
      * @param class-string<TEvent> $class
-     * @param list<EventListener<TEvent>> $listeners
      */
     public function __construct(
-        public string $class = Event::class,
-        protected array $listeners = [],
+        public readonly string $class = Event::class,
     )
     {
         if (!is_a($class, Event::class, true)) {

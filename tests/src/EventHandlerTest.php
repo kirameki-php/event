@@ -19,6 +19,7 @@ final class EventHandlerTest extends TestCase
     {
         $handler = new EventHandler();
         $this->assertSame(Event::class, $handler->class);
+        $this->assertSame([], $handler->listeners);
         $this->assertFalse($handler->hasListeners());
     }
 

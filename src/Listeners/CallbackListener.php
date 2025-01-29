@@ -15,10 +15,7 @@ class CallbackListener implements EventListener
     /**
      * @var class-string<TEvent>
      */
-    public protected(set) string $eventClass {
-        get => $this->eventClass;
-        set => $this->eventClass = $value;
-    }
+    public protected(set) string $eventClass;
 
     /**
      * @param class-string<TEvent> $eventClass

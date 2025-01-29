@@ -47,9 +47,10 @@ class HandlesEventsTest extends TestCase
     {
         $manager = new CustomManager;
         $manager->resolveHandler(EventA::class);
-        $manager->removeHandler(EventA::class);
+        $this->assertTrue($manager->removeHandler(EventA::class));
         $this->assertFalse($manager->hasListeners(EventA::class));
         $this->assertNull($manager->getHandlerOrNull(EventA::class));
+        $this->assertFalse($manager->removeHandler(EventA::class));
     }
 
     public function test_emitEvent(): void
