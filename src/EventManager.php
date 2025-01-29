@@ -137,15 +137,18 @@ class EventManager implements EventEmitter
      * Remove all listeners for the given event.
      *
      * @param class-string<Event> $name
-     * @return bool
+     * @return int<-1, max>
+     * The number of listeners that were removed.
+     * Returns -1 if the event handler does not exist.
      */
-    public function removeAllListeners(string $name): bool
+    public function removeAllListeners(string $name): int
     {
-        if ($this->eventHasListeners($name)) {
+        if ($handler = $this->getEventHandlerOrNull($name)) {
+            $count = $handler->removeAllListeners();
             $this->removeEventHandler($name);
-            return true;
+            return $count;
         }
-        return false;
+        return -1;
     }
 
     /**

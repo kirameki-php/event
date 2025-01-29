@@ -215,13 +215,13 @@ class EventManagerTest extends TestCase
 
     public function test_removeAllListeners(): void
     {
-        self::assertFalse($this->events->removeAllListeners(Saving::class));
+        $this->assertSame(-1, $this->events->removeAllListeners(Saving::class));
 
         $this->events->append(new CallbackListener(Saving::class, fn(Saving $e) => true));
         $this->events->append(new CallbackListener(Saving::class, fn(Saving $e) => false));
 
         $this->assertTrue($this->events->hasListeners(Saving::class));
-        $this->assertTrue($this->events->removeAllListeners(Saving::class));
+        $this->assertSame(2, $this->events->removeAllListeners(Saving::class));
         $this->assertFalse($this->events->hasListeners(Saving::class));
     }
 
