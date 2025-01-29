@@ -17,5 +17,5 @@ interface EventListener
     /**
      * @param TEvent $event
      */
-    public function invoke(Event $event): void;
+    public function __invoke(Event $event): void;
 }

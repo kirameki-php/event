@@ -21,10 +21,10 @@ final class CallbackListenerTest extends TestCase
         $o->value = 0;
         $event = new EventA();
         $handler = new CallbackListener($event::class, fn() => $o->value += 1);
-        $handler->invoke($event);
+        $handler($event);
         $this->assertFalse($event->willEvictCallback());
         $this->assertSame(1, $o->value);
-        $handler->invoke($event);
+        $handler($event);
         $this->assertSame(2, $o->value);
     }
 }

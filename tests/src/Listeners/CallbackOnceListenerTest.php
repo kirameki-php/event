@@ -21,7 +21,7 @@ final class CallbackOnceListenerTest extends TestCase
         $o->value = 0;
         $event = new EventA();
         $handler = new CallbackOnceListener($event::class, fn() => $o->value += 1);
-        $handler->invoke($event);
+        $handler($event);
         $this->assertSame(1, $o->value);
         $this->assertTrue($event->willEvictCallback());
     }

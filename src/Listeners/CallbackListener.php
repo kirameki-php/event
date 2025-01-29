@@ -33,7 +33,7 @@ class CallbackListener implements EventListener
      * @inheritDoc
      */
     #[Override]
-    public function invoke(Event $event): void
+    public function __invoke(Event $event): void
     {
         ($this->callback)($event);
         if ($this->evictAfterInvocation()) {

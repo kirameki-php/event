@@ -156,7 +156,7 @@ class EventHandler
         $evicting = [];
         $callCount = 0;
         foreach ($this->listeners as $index => $listener) {
-            $listener->invoke($event);
+            $listener($event);
             $callCount++;
             if ($event->willEvictCallback()) {
                 $evicting[] = $index;
