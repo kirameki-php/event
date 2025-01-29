@@ -3,15 +3,15 @@
 namespace Tests\Kirameki\Event\Listeners;
 
 use Kirameki\Core\Testing\TestCase;
-use Kirameki\Event\Listeners\CallbackListener;
+use Kirameki\Event\Listeners\CallbackOnceListener;
 use stdClass;
 use Tests\Kirameki\Event\Samples\EventA;
 
-final class CallbackListenerTest extends TestCase
+final class CallbackOnceListenerTest extends TestCase
 {
     public function test_constructor(): void
     {
-        $handler = new CallbackListener(EventA::class, fn() => true);
+        $handler = new CallbackOnceListener(EventA::class, fn() => true);
         $this->assertSame(EventA::class, $handler->eventClass);
     }
 
@@ -20,11 +20,9 @@ final class CallbackListenerTest extends TestCase
         $o = new stdClass();
         $o->value = 0;
         $event = new EventA();
-        $handler = new CallbackListener($event::class, fn() => $o->value += 1);
+        $handler = new CallbackOnceListener($event::class, fn() => $o->value += 1);
         $handler->invoke($event);
-        $this->assertFalse($event->willEvictCallback());
         $this->assertSame(1, $o->value);
-        $handler->invoke($event);
-        $this->assertSame(2, $o->value);
+        $this->assertTrue($event->willEvictCallback());
     }
 }
