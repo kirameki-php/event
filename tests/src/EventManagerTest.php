@@ -9,6 +9,7 @@ use Kirameki\Event\EventEmitter;
 use Kirameki\Event\EventManager;
 use Kirameki\Event\Listeners\CallbackListener;
 use Kirameki\Event\Listeners\CallbackOnceListener;
+use stdClass;
 use Tests\Kirameki\Event\Samples\Saving;
 
 class EventManagerTest extends TestCase
@@ -227,12 +228,12 @@ class EventManagerTest extends TestCase
 
     public function test_onEmitted(): void
     {
+        $o = new stdClass();
+        $o->stored = [];
         $event1 = new Saving('test');
 
-        $this->events->onEmitted(function (Event $e) use ($event1) {
-            $this->assertSame($event1, $e);
-        });
-
+        $this->events->onEmitted(fn(Saving $e) => $o->stored[] = $e);
         $this->events->emit($event1);
+        $this->assertSame([$event1], $o->stored);
     }
 }
