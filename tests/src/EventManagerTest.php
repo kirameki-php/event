@@ -68,12 +68,12 @@ class EventManagerTest extends TestCase
         $this->expectExceptionMessage('Expected class to be instance of Kirameki\Event\Event, got DateTime.');
         $this->expectException(InvalidArgumentException::class);
 
-        $this->events->once(DateTime::class, fn(DateTime $t) => true);
+        $this->events->once(DateTime::class, fn() => true);
     }
 
     public function test_append_valid(): void
     {
-        $this->events->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
+        $this->events->append(new CallbackListener(Saving::class, fn(Saving $e) => $this->results[] = $e));
 
         $event1 = new Saving('test');
         $event2 = new Saving('test');
@@ -85,7 +85,7 @@ class EventManagerTest extends TestCase
 
     public function test_append_once(): void
     {
-        $this->events->append(new CallbackOnceListener(fn(Saving $e) => $this->results[] = $e));
+        $this->events->append(new CallbackOnceListener(Saving::class, fn(Saving $e) => $this->results[] = $e));
 
         $this->assertTrue($this->events->hasListeners(Saving::class));
 
@@ -103,8 +103,8 @@ class EventManagerTest extends TestCase
 
     public function test_append_with_cancel(): void
     {
-        $this->events->append(new CallbackListener(fn(Saving $e) => $e->cancel()));
-        $this->events->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
+        $this->events->append(new CallbackListener(Saving::class, fn(Saving $e) => $e->cancel()));
+        $this->events->append(new CallbackListener(Saving::class, fn(Saving $e) => $this->results[] = $e));
 
         $this->events->emit(new Saving('test'));
 
@@ -115,8 +115,8 @@ class EventManagerTest extends TestCase
     public function test_prepend_valid(): void
     {
         $called = [];
-        $this->events->append(new CallbackListener(function (Saving $_) use (&$called) { $called[] = 'a'; }));
-        $this->events->prepend(new CallbackListener(function (Saving $_) use (&$called) { $called[] = 'b'; }));
+        $this->events->append(new CallbackListener(Saving::class, function (Saving $_) use (&$called) { $called[] = 'a'; }));
+        $this->events->prepend(new CallbackListener(Saving::class, function (Saving $_) use (&$called) { $called[] = 'b'; }));
 
         $this->events->emit(new Saving('test'));
 
@@ -125,7 +125,7 @@ class EventManagerTest extends TestCase
 
     public function test_prepend_once(): void
     {
-        $this->events->prepend(new CallbackOnceListener(fn(Saving $e) => $this->results[] = $e));
+        $this->events->prepend(new CallbackOnceListener(Saving::class, fn(Saving $e) => $this->results[] = $e));
 
         $this->assertTrue($this->events->hasListeners(Saving::class));
 
@@ -143,8 +143,8 @@ class EventManagerTest extends TestCase
 
     public function test_prepend_with_cancel(): void
     {
-        $this->events->prepend(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
-        $this->events->prepend(new CallbackListener(fn(Saving $e) => $e->cancel()));
+        $this->events->prepend(new CallbackListener(Saving::class, fn(Saving $e) => $this->results[] = $e));
+        $this->events->prepend(new CallbackListener(Saving::class, fn(Saving $e) => $e->cancel()));
 
         $event = new Saving('test');
         $canceled = false;
@@ -159,14 +159,14 @@ class EventManagerTest extends TestCase
     {
         $this->assertFalse($this->events->hasListeners(Saving::class));
 
-        $this->events->append(new CallbackListener(fn(Saving $e) => true));
+        $this->events->append(new CallbackListener(Saving::class, fn(Saving $e) => true));
 
         $this->assertTrue($this->events->hasListeners(Saving::class));
     }
 
     public function test_emit(): void
     {
-        $this->events->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
+        $this->events->append(new CallbackListener(Saving::class, fn(Saving $e) => $this->results[] = $e));
 
         $event1 = new Saving('test');
         $this->events->emit($event1);
@@ -176,7 +176,7 @@ class EventManagerTest extends TestCase
 
     public function test_emit__with_canceled_ref(): void
     {
-        $this->events->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
+        $this->events->append(new CallbackListener(Saving::class, fn(Saving $e) => $this->results[] = $e));
 
         $event1 = new Saving('test');
         $canceled = false;
@@ -188,8 +188,8 @@ class EventManagerTest extends TestCase
 
     public function test_emit__with_cancel_triggered(): void
     {
-        $this->events->append(new CallbackListener(fn(Saving $e) => $e->cancel()));
-        $this->events->append(new CallbackListener(fn(Saving $e) => $this->results[] = $e));
+        $this->events->append(new CallbackListener(Saving::class, fn(Saving $e) => $e->cancel()));
+        $this->events->append(new CallbackListener(Saving::class, fn(Saving $e) => $this->results[] = $e));
 
         $event1 = new Saving('test');
         $canceled = false;
@@ -201,7 +201,7 @@ class EventManagerTest extends TestCase
 
     public function test_removeListener(): void
     {
-        $callback = new CallbackListener(fn(Saving $e) => $this->results[] = $e);
+        $callback = new CallbackListener(Saving::class, fn(Saving $e) => $this->results[] = $e);
 
         $this->assertSame(0, $this->events->removeListener($callback));
         $this->assertFalse($this->events->hasListeners(Saving::class));
@@ -217,8 +217,8 @@ class EventManagerTest extends TestCase
     {
         self::assertFalse($this->events->removeAllListeners(Saving::class));
 
-        $this->events->append(new CallbackListener(fn(Saving $e) => true));
-        $this->events->append(new CallbackListener(fn(Saving $e) => false));
+        $this->events->append(new CallbackListener(Saving::class, fn(Saving $e) => true));
+        $this->events->append(new CallbackListener(Saving::class, fn(Saving $e) => false));
 
         $this->assertTrue($this->events->hasListeners(Saving::class));
         $this->assertTrue($this->events->removeAllListeners(Saving::class));

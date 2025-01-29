@@ -14,13 +14,13 @@ trait HandlesEvents
     /**
      * @template TEvent of Event
      * @param TEvent $event
-     * @return void
+     * @return int
      */
-    protected function emitEvent(Event $event): void
+    protected function emitEvent(Event $event): int
     {
-        if ($this->eventHasListeners($event::class)) {
-            $this->resolveEventHandler($event::class)->emit($event);
-        }
+        return $this->eventHasListeners($event::class)
+            ? $this->resolveEventHandler($event::class)->emit($event)
+            : 0;
     }
 
     /**

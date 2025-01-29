@@ -46,7 +46,7 @@ class EventHandler
      */
     public function do(Closure $callback): CallbackListener
     {
-        return $this->append(new CallbackListener($callback, $this->class));
+        return $this->append(new CallbackListener($this->class, $callback));
     }
 
     /**
@@ -59,7 +59,7 @@ class EventHandler
      */
     public function doOnce(Closure $callback): CallbackOnceListener
     {
-        return $this->append(new CallbackOnceListener($callback, $this->class));
+        return $this->append(new CallbackOnceListener($this->class, $callback));
     }
 
     /**
@@ -98,7 +98,7 @@ class EventHandler
     {
         $indexes = [];
         foreach ($this->listeners as $index => $compare) {
-            if ($compare->isEqual($listener)) {
+            if ($compare === $listener) {
                 $indexes[] = $index;
             }
         }

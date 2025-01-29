@@ -59,7 +59,7 @@ class EventManager implements EventEmitter
      */
     public function append(EventListener $listener): EventListener
     {
-        return $this->resolveEventHandler($listener->getEventClass())->append($listener);
+        return $this->resolveEventHandler($listener->eventClass)->append($listener);
     }
 
     /**
@@ -72,7 +72,7 @@ class EventManager implements EventEmitter
      */
     public function prepend(EventListener $listener): EventListener
     {
-        return $this->resolveEventHandler($listener->getEventClass())->prepend($listener);
+        return $this->resolveEventHandler($listener->eventClass)->prepend($listener);
     }
 
     /**
@@ -118,7 +118,7 @@ class EventManager implements EventEmitter
     {
         $count = 0;
 
-        $class = $listener->getEventClass();
+        $class = $listener->eventClass;
         $handler = $this->getEventHandlerOrNull($class);
         if ($handler === null) {
             return $count;

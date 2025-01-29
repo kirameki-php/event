@@ -3,12 +3,8 @@
 namespace Kirameki\Event\Listeners;
 
 use Closure;
-use Kirameki\Core\Exceptions\LogicException;
 use Kirameki\Event\Event;
 use Override;
-use ReflectionFunction;
-use ReflectionNamedType;
-use function is_a;
 
 /**
  * @template TEvent of Event
@@ -17,23 +13,23 @@ use function is_a;
 class CallbackListener implements EventListener
 {
     /**
-     * @param Closure(TEvent): mixed $callback
-     * @param class-string<TEvent>|null $eventClass
+     * @var class-string<TEvent>
      */
-    public function __construct(
-        protected readonly Closure $callback,
-        protected ?string $eventClass = null,
-    )
-    {
+    public protected(set) string $eventClass {
+        get => $this->eventClass;
+        set => $this->eventClass = $value;
     }
 
     /**
-     * @inheritDoc
+     * @param class-string<TEvent> $eventClass
+     * @param Closure(TEvent): mixed $callback
      */
-    #[Override]
-    public function getEventClass(): string
+    public function __construct(
+        string $eventClass,
+        protected readonly Closure $callback,
+    )
     {
-        return $this->eventClass ??= $this->resolveEventClass();
+        $this->eventClass = $eventClass;
     }
 
     /**
@@ -49,41 +45,10 @@ class CallbackListener implements EventListener
     }
 
     /**
-     * @inheritDoc
-     */
-    #[Override]
-    public function isEqual(mixed $listener): bool
-    {
-        return $listener === $this;
-    }
-
-    /**
      * @return bool
      */
     protected function evictAfterInvocation(): bool
     {
         return false;
-    }
-
-    /**
-     * The callback must have an Event as the first parameter.
-     * @return class-string<TEvent>
-     */
-    protected function resolveEventClass(): string
-    {
-        $paramReflection = (new ReflectionFunction($this->callback))->getParameters()[0] ?? null;
-        $type = $paramReflection?->getType();
-        $name = ($type instanceof ReflectionNamedType)
-            ? $type->getName()
-            : '';
-
-        if (!is_a($name, Event::class, true)) {
-            throw new LogicException('The first parameter of the callback must be an instance of Event.', [
-                'callback' => $this->callback,
-            ]);
-        }
-
-        /** @var class-string<TEvent> */
-        return $name;
     }
 }

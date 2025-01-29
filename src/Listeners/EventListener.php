@@ -10,18 +10,12 @@ use Kirameki\Event\Event;
 interface EventListener
 {
     /**
-     * @return class-string<TEvent>
+     * @var class-string<TEvent>
      */
-    public function getEventClass(): string;
+    public string $eventClass { get; }
 
     /**
      * @param TEvent $event
      */
     public function invoke(Event $event): void;
-
-    /**
-     * @param self<Event> $listener
-     * @return bool
-     */
-    public function isEqual(mixed $listener): bool;
 }

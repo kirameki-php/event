@@ -2,7 +2,6 @@
 
 namespace Kirameki\Event\Listeners;
 
-use Closure;
 use Kirameki\Event\Event;
 use Override;
 
@@ -12,18 +11,6 @@ use Override;
  */
 class CallbackOnceListener extends CallbackListener
 {
-    /**
-     * @param Closure(TEvent): mixed $callback
-     * @param class-string<TEvent>|null $eventClass
-     */
-    public function __construct(
-        Closure $callback,
-        ?string $eventClass = null,
-    )
-    {
-        parent::__construct($callback, $eventClass);
-    }
-
     /**
      * @inheritDoc
      */
